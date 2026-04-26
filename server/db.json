@@ -1,0 +1,323 @@
+{
+  "regions": [
+    {
+      "id": "reg-1",
+      "name": "Madre De Dios"
+    },
+    {
+      "id": "reg-2",
+      "name": "Lima"
+    },
+    {
+      "id": "reg-3",
+      "name": "La Libertad"
+    },
+    {
+      "id": "reg-4",
+      "name": "Ancash"
+    },
+    {
+      "id": "reg-5",
+      "name": "Ica"
+    },
+    {
+      "id": "reg-6",
+      "name": "Puno"
+    },
+    {
+      "id": "reg-7",
+      "name": "Arequipa"
+    },
+    {
+      "id": "reg-8",
+      "name": "Cusco"
+    },
+    {
+      "id": "reg-9",
+      "name": "Huánuco"
+    },
+    {
+      "id": "reg-10",
+      "name": "Ayacucho"
+    },
+    {
+      "id": "reg-11",
+      "name": "Amazonas"
+    },
+    {
+      "id": "reg-12",
+      "name": "Lambayeque"
+    },
+    {
+      "id": "reg-13",
+      "name": "Tacna"
+    },
+    {
+      "id": "reg-14",
+      "name": "Junín"
+    }
+  ],
+  "provinces": [
+    {
+      "id": "prov-1",
+      "name": "Santiago",
+      "fk_id_region": "reg-1"
+    },
+    {
+      "id": "prov-2",
+      "name": "Valparaíso",
+      "fk_id_region": "reg-2"
+    },
+    {
+      "id": "prov-3",
+      "name": "Talca",
+      "fk_id_region": "reg-3"
+    }
+  ],
+  "districts": [
+    {
+      "id": "dist-1",
+      "name": "Santiago Centro",
+      "fk_id_province": "prov-1"
+    },
+    {
+      "id": "dist-2",
+      "name": "Providencia",
+      "fk_id_province": "prov-2"
+    },
+    {
+      "id": "dist-3",
+      "name": "Valparaíso Centro",
+      "fk_id_province": "prov-3"
+    }
+  ],
+  "localities": [
+    {
+      "id": "loc-1",
+      "name": "Plaza de Armas",
+      "fk_id_district": "dist-1"
+    },
+    {
+      "id": "loc-2",
+      "name": "Barrio Bellavista",
+      "fk_id_district": "dist-2"
+    },
+    {
+      "id": "loc-3",
+      "name": "Cerro Alegre",
+      "fk_id_district": "dist-3"
+    }
+  ],
+  "users": [
+    {
+      "id": "user-1",
+      "created_at": "2023-05-15T10:30:00Z",
+      "email": "carlos.mendoza@example.com",
+      "name": "Carlos Mendoza",
+      "password": "hashedpassword123",
+      "role": "admin"
+    },
+    {
+      "id": "user-2",
+      "created_at": "2023-06-20T14:45:00Z",
+      "email": "sofia.gonzalez@example.com",
+      "name": "Sofía González",
+      "password": "hashedpassword456",
+      "role": "company"
+    },
+    {
+      "id": "user-3",
+      "created_at": "2023-07-10T09:15:00Z",
+      "email": "javier.rodriguez@example.com",
+      "name": "Javier Rodríguez",
+      "password": "hashedpassword789",
+      "role": "user"
+    }
+  ],
+  "companies": [
+    {
+      "id": "comp-2",
+      "name": "segunda empresa",
+      "fk_id_manager": "user-2",
+      "logo_url": "https://images-platform.99static.com/Tx5HU2yFRWJOhxGekV6aSsrh740=/0x0:1667x1667/500x500/top/smart/99designs-contests-attachments/94/94613/attachment_94613553",
+      "ruc": null,
+      "phone": null,
+      "email": null,
+      "address": null,
+      "description": null
+    },
+    {
+      "id": "comp-1",
+      "name": "primera empresa",
+      "fk_id_manager": null,
+      "logo_url": "https://images-platform.99static.com/Tx5HU2yFRWJOhxGekV6aSsrh740=/0x0:1667x1667/500x500/top/smart/99designs-contests-attachments/94/94613/attachment_94613553",
+      "ruc": "20123456789",
+      "phone": "123456789",
+      "email": "asdasd@gmail.com",
+      "address": "hola 123",
+      "description": "nionguno"
+    }
+  ],
+  "schedules": [
+    {
+      "routeId": 1,
+      "dayOfWeek": "Lunes",
+      "startTime": "10:00",
+      "endTime": "17:00",
+      "enabled": true,
+      "id": 1
+    },
+    {
+      "routeId": 1,
+      "dayOfWeek": "Martes",
+      "startTime": "10:00",
+      "endTime": "17:00",
+      "enabled": true,
+      "id": 2
+    },
+    {
+      "routeId": 1,
+      "dayOfWeek": "Miércoles",
+      "startTime": "",
+      "endTime": "",
+      "enabled": false,
+      "id": 3
+    },
+    {
+      "routeId": 1,
+      "dayOfWeek": "Jueves",
+      "startTime": "",
+      "endTime": "",
+      "enabled": false,
+      "id": 4
+    },
+    {
+      "routeId": 1,
+      "dayOfWeek": "Viernes",
+      "startTime": "",
+      "endTime": "",
+      "enabled": false,
+      "id": 5
+    },
+    {
+      "routeId": 1,
+      "dayOfWeek": "Sábado",
+      "startTime": "",
+      "endTime": "",
+      "enabled": false,
+      "id": 6
+    },
+    {
+      "routeId": 1,
+      "dayOfWeek": "Domingo",
+      "startTime": "10:00",
+      "endTime": "17:00",
+      "enabled": true,
+      "id": 7
+    }
+  ],
+  "itineraries": [
+    {
+      "id": "itin-1",
+      "name": "Tour Cultural Santiago",
+      "fk_user_id": "user-3"
+    },
+    {
+      "id": "itin-2",
+      "name": "Paseo por Valparaíso",
+      "fk_user_id": "user-1"
+    }
+  ],
+  "stops": [
+    {
+      "id": "stop-1750371753156",
+      "name": "Paradero 1",
+      "google_maps_url": null,
+      "image_url": null,
+      "phone": "123",
+      "fk_id_company": "comp-1",
+      "fk_id_locality": "loc-1",
+      "address": "nuevadireccion",
+      "reference": "asd"
+    },
+    {
+      "id": "stop-1750371768081",
+      "name": "paradero 2",
+      "google_maps_url": null,
+      "image_url": null,
+      "phone": "923",
+      "fk_id_company": "comp-1",
+      "fk_id_locality": "loc-2",
+      "address": "asdsad",
+      "reference": "asdasd"
+    },
+    {
+      "id": "stop-1750302910098",
+      "name": "asd",
+      "google_maps_url": null,
+      "image_url": null,
+      "phone": "asda",
+      "fk_id_company": "comp-1",
+      "fk_id_locality": "loc-1",
+      "address": "sadas",
+      "reference": "asdas",
+      "apiId": "v1"
+    },
+    {
+      "id": "stop-1750302924264",
+      "name": "asd",
+      "google_maps_url": null,
+      "image_url": null,
+      "phone": "asdasd",
+      "fk_id_company": "comp-1",
+      "fk_id_locality": "loc-3",
+      "address": "asda",
+      "reference": "asdas",
+      "apiId": "v1"
+    },
+    {
+      "id": "stop-1750383089446",
+      "name": "Amir",
+      "google_maps_url": null,
+      "image_url": null,
+      "phone": "947379321",
+      "fk_id_company": "comp-1",
+      "fk_id_locality": "loc-1",
+      "address": "asd",
+      "reference": "al lado de mi jato",
+      "apiId": "v1"
+    }
+  ],
+  "route_stops": [
+    {
+      "fk_id_stop": "stop-1750371753156",
+      "fk_id_route": 1,
+      "id": 1
+    },
+    {
+      "fk_id_stop": "stop-1750371768081",
+      "fk_id_route": 1,
+      "id": 2
+    }
+  ],
+  "routes": [
+    {
+      "duracion": 112,
+      "tarifa": 12,
+      "frecuencia": 12,
+      "id": 1
+    }
+  ],
+  "itineraries_routes": [
+    {
+      "id": "ir-1",
+      "fk_id_itinerary": "itin-1",
+      "fk_id_route": "route-1"
+    },
+    {
+      "id": "ir-2",
+      "fk_id_itinerary": "itin-2",
+      "fk_id_route": "route-2"
+    }
+  ]
+}

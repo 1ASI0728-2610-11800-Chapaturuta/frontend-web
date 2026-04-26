@@ -1,0 +1,32 @@
+{
+  "name": "chapaturuta",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "json-server": "json-server --watch server/db.json --port 3000"
+  },
+  "dependencies": {
+    "@heroicons/vue": "^2.2.0",
+    "@primeuix/forms": "^0.0.4",
+    "@primeuix/themes": "^1.1.1",
+    "@primevue/forms": "^4.3.5",
+    "axios": "^1.9.0",
+    "primeflex": "^4.0.0",
+    "primeicons": "^7.0.0",
+    "primevue": "^4.3.5",
+    "vue": "^3.5.13",
+    "vue-i18n": "^9.14.4",
+    "vue-router": "^4.5.1",
+    "zod": "^3.25.49"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.3",
+    "json-server": "^0.17.4",
+    "vite": "^6.2.4",
+    "vite-plugin-vue-devtools": "^7.7.2"
+  }
+}

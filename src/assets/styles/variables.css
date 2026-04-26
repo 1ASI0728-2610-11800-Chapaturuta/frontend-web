@@ -1,0 +1,12 @@
+:root {
+    /* Legacy aliases — kept for popup components that still reference these */
+    --color-primary: var(--gold-500);
+    --color-off: var(--carbon-600);
+    --color-secondary: var(--carbon-800);
+    --color-tertiary-gray: var(--carbon-700);
+    --color-tertiary-inputs: var(--gold-600);
+    --color-text: var(--carbon-100);
+    --color-white: var(--carbon-800);
+    --color-slate-300: var(--carbon-200);
+    --color-slate-400: var(--carbon-400);
+}

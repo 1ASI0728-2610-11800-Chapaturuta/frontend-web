@@ -1,0 +1,35 @@
+{
+  "login": {
+    "title": "Login",
+    "email": "Email",
+    "emailPlaceholder": "Enter your email",
+    "invalidEmail": "Invalid email",
+    "password": "Password",
+    "passwordPlaceholder": "Enter your password",
+    "requiredPassword": "Password required",
+    "button": "Login",
+    "loading": "Verifying...",
+    "noAccount": "Don't have an account?",
+    "register": "Sign Up",
+    "error": "Invalid credentials. Please try again."
+  },
+  "register": {
+    "title": "Sign Up",
+    "firstNamePlaceholder": "First Name",
+    "lastNamePlaceholder": "Last Name",
+    "emailPlaceholder": "Email",
+    "passwordPlaceholder": "Password",
+    "selectRole": "Register as",
+    "driver": "Passenger",
+    "manager": "Carrier",
+    "selectRequired": "Please select a role",
+    "required": "Field required",
+    "invalidEmail": "Invalid email",
+    "button": "Sign Up",
+    "processing": "Processing...",
+    "success": "Registration successful",
+    "error": "An error occurred, try again.",
+    "hasAccount": "Already have an account?",
+    "loginLink": "Log In"
+  }
+}
