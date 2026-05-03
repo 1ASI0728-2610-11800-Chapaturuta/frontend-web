@@ -156,7 +156,13 @@ export class StopService extends BaseService {
             formData.append('Reference', stopData.reference);
             formData.append('FkIdCompany', companyId.toString());
             formData.append('FkIdDistrict', stopData.fk_id_district);
-            formData.append('GoogleMapsUrl', stopData.google_maps_url || '');
+            const lat = stopData.latitude ?? stopData.lat;
+            const lng = stopData.longitude ?? stopData.lng;
+            const gmaps = stopData.google_maps_url
+                || (lat != null && lng != null ? `https://maps.google.com/?q=${lat},${lng}` : '');
+            formData.append('GoogleMapsUrl', gmaps);
+            if (lat != null) formData.append('Latitude', String(lat));
+            if (lng != null) formData.append('Longitude', String(lng));
 
             // Agregar archivo si existe
             if (stopData.imageFile) {

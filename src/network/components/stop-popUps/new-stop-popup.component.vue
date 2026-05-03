@@ -2,9 +2,11 @@
 import { ref } from "vue";
 import { StopService } from '@/network/services/stop.service.js';
 import {GeographyService} from "@/geography/services/geography.service.js";
+import MapPicker from '@/shared/components/MapPicker.vue';
 
 export default {
   name: "popUpNewStop",
+  components: { MapPicker },
 
   setup() {
     const visiblePop = ref(false);
@@ -28,9 +30,14 @@ export default {
         address: '',
         reference: '',
         fk_id_district: '',
-        imageFile: null
+        imageFile: null,
+        latitude: null,
+        longitude: null
       },
-      locationHierarchy: [],
+      coords: null,
+      districtsFlat: [],
+      districtSuggestions: [],
+      selectedDistrict: null,
       submitted: false,
       isUploading: false
     };
@@ -42,7 +49,8 @@ export default {
           this.paradero.phone &&
           this.paradero.address &&
           this.paradero.reference &&
-          this.paradero.fk_id_district;
+          this.paradero.fk_id_district &&
+          this.coords && this.coords.lat != null && this.coords.lng != null;
     },
   },
 
@@ -50,7 +58,23 @@ export default {
     async loadDropdowns() {
       try {
         const service = new GeographyService();
-        this.locationHierarchy = await service.getFullHierarchy();
+        const hierarchy = await service.getFullHierarchy();
+        const flat = [];
+        for (const region of hierarchy) {
+          for (const prov of (region.provinces || [])) {
+            for (const dist of (prov.districts || [])) {
+              flat.push({
+                id: dist.id,
+                name: dist.name,
+                province: prov.name,
+                region: region.name,
+                label: `${dist.name} — ${prov.name}, ${region.name}`,
+                _search: `${dist.name} ${prov.name} ${region.name}`.toLowerCase()
+              });
+            }
+          }
+        }
+        this.districtsFlat = flat;
       } catch (err) {
         this.$toast.add({
           severity: 'error',
@@ -59,6 +83,24 @@ export default {
           life: 3000
         });
       }
+    },
+
+    searchDistrict(event) {
+      const q = (event.query || '').trim().toLowerCase();
+      if (!q) {
+        this.districtSuggestions = this.districtsFlat.slice(0, 20);
+        return;
+      }
+      const tokens = q.split(/\s+/);
+      this.districtSuggestions = this.districtsFlat
+        .filter(d => tokens.every(t => d._search.includes(t)))
+        .slice(0, 30);
+    },
+
+    onDistrictSelect(event) {
+      const v = event.value;
+      this.selectedDistrict = v;
+      this.paradero.fk_id_district = v?.id || '';
     },
 
     onImageSelect(event) {
@@ -131,7 +173,12 @@ export default {
         this.paradero.fk_id_company = user?.companyId || '';
 
         const service = new StopService();
-        const created = await service.createStop({...this.paradero});
+        const payload = {
+          ...this.paradero,
+          latitude: this.coords?.lat,
+          longitude: this.coords?.lng
+        };
+        const created = await service.createStop(payload);
 
         this.$emit('created', created);
         this.$toast.add({
@@ -165,8 +212,13 @@ export default {
         reference: '',
         fk_id_company: '',
         fk_id_district: '',
-        imageFile: null
+        imageFile: null,
+        latitude: null,
+        longitude: null
       };
+      this.coords = null;
+      this.selectedDistrict = null;
+      this.districtSuggestions = [];
       this.submitted = false;
       this.removeImage();
     },
@@ -190,7 +242,7 @@ export default {
       <h1 class="title">Nuevo Paradero</h1>
     </template>
 
-    <pb-Form @submit="createStop">
+    <form @submit.prevent="createStop">
       <div class="form-container">
 
         <!-- Campo de Nombre -->
@@ -219,19 +271,28 @@ export default {
 
         <!-- Campo de Distrito -->
         <pb-IftaLabel class="labelSelectField">
-          <pb-CascadeSelect
-              class="cascade-field"
+          <pb-AutoComplete
               inputId="district"
-              v-model="paradero.fk_id_district"
-              :options="locationHierarchy"
-              option-label="name"
-              option-value="id"
-              option-group-label="name"
-              :option-group-children="['provinces', 'districts']"
-              placeholder="Selecciona la ubicación"
+              v-model="selectedDistrict"
+              :suggestions="districtSuggestions"
+              option-label="label"
+              :force-selection="true"
+              :complete-on-focus="true"
+              :delay="100"
+              placeholder="Escribe nombre del distrito"
+              class="autocomplete-field"
+              dropdown
+              @complete="searchDistrict"
+              @item-select="onDistrictSelect"
           />
           <label for="district">Distrito</label>
         </pb-IftaLabel>
+
+        <!-- Mapa para fijar coordenadas -->
+        <div class="map-section">
+          <label class="image-upload-label">Ubicación en el mapa <span style="color:#e57373">*</span></label>
+          <MapPicker v-model="coords" height="280px" />
+        </div>
 
         <!-- Campo de Imagen -->
         <div class="image-upload-section">
@@ -288,22 +349,21 @@ export default {
               :label="isUploading ? 'Creando...' : 'Crear'"
               :icon="isUploading ? 'pi pi-spin pi-spinner' : 'pi pi-check'"
               class="create-button"
-              type="submit"
-              :disabled="(!isFormValid && !submitted) || isUploading"
+              type="button"
+              :disabled="isUploading"
+              @click="createStop"
           />
         </div>
       </div>
-    </pb-Form>
+    </form>
   </pb-Dialog>
 </template>
 
 <style scoped>
-.cascade-field {
-  border-color: var(--color-off);
-  --p-cascadeselect-focus-border-color: var(--color-primary);
-  max-height: 200px;
-  overflow-y: auto;
+.autocomplete-field {
+  width: 100%;
 }
+.autocomplete-field :deep(input) { width: 100%; }
 
 .labelSelectField{
   --p-iftalabel-color: var(--color-slate-400);

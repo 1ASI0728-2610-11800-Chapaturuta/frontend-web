@@ -1,11 +1,13 @@
 <script>
 import DeleteRoutePopUp from "@/network/components/routes-popUps/delete-route-popup.component.vue";
+import RouteMapDialog from "@/network/components/route-map-dialog.component.vue";
 
 export default {
   name: 'RutaCard',
   props: { route: { type: Object, required: true } },
-  components: { DeleteRoutePopUp },
-  emits: ['updated', 'deleted']
+  components: { DeleteRoutePopUp, RouteMapDialog },
+  emits: ['updated', 'deleted'],
+  data() { return { mapOpen: false } }
 }
 </script>
 
@@ -70,6 +72,7 @@ export default {
     </div>
 
     <div class="route-actions">
+      <pb-Button label="Ver mapa" icon="pi pi-map" class="map-btn" severity="secondary" @click="mapOpen = true" />
       <delete-route-pop-up
         :route-id="route.id"
         @deleted="$emit('deleted', $event)"
@@ -77,6 +80,7 @@ export default {
         icon="pi pi-trash"
       />
     </div>
+    <route-map-dialog v-model="mapOpen" :route="route" />
   </div>
 </template>
 

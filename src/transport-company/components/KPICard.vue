@@ -12,7 +12,7 @@
 
 <script setup>
 defineProps({
-  icon:  { type: Object, required: true },
+  icon:  { type: [Object, Function], required: true },
   value: { type: [String, Number], required: true },
   label: { type: String, required: true },
   color: { type: String, default: '#C9A84C' },

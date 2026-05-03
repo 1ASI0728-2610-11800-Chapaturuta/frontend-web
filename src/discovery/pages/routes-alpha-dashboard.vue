@@ -1,6 +1,7 @@
 <script>
 import RoutesAlphaList   from "@/discovery/components/routes-alpha/routes-alpha-list.component.vue";
 import RoutesAlphaFilter from "@/discovery/components/routes-alpha/routes-alpha-filter.component.vue";
+import NearbyStops       from "@/discovery/components/nearby-stops.component.vue";
 import { routeAlphaService } from "@/discovery/services/route-alpha.service.js";
 import { DistrictService }  from "@/geography/services/district.service.js";
 import { RegionService }    from "@/geography/services/region.service.js";
@@ -8,7 +9,7 @@ import { ProvinceService }  from "@/geography/services/province.service.js";
 
 export default {
   name: "routes-alpha-dashboard",
-  components: { RoutesAlphaList, RoutesAlphaFilter },
+  components: { RoutesAlphaList, RoutesAlphaFilter, NearbyStops },
   data() {
     return {
       regions:   [],
@@ -88,6 +89,8 @@ export default {
         </div>
       </div>
     </div>
+
+    <nearby-stops />
 
     <routes-alpha-filter
       :regions="regions"

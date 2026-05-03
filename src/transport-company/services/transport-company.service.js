@@ -67,10 +67,15 @@ export class TransportCompanyService extends BaseService {
     async updateCompany(companyId, companyData) {
         try {
             const response = await this.http.put(`${this.resourcePath()}/${companyId}`, {
-                id: companyId,
+                id: Number(companyId),
                 name: companyData.name,
-                logoUrl: companyData.logoUrl,
-                fkIdUser: Number(companyData.fkIdUser)
+                logoUrl: companyData.logoUrl ?? '',
+                fkIdUser: Number(companyData.fkIdUser),
+                ruc: companyData.ruc ?? null,
+                phone: companyData.phone ?? null,
+                email: companyData.email ?? null,
+                address: companyData.address ?? null,
+                description: companyData.description ?? null
             });
 
             return response.data;

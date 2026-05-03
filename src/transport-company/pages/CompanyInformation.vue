@@ -79,10 +79,8 @@ const companyInfo   = reactive(new TransportCompany({}))
 const isLoading     = ref(false)
 const showSuccess   = ref(false)
 
-const getCompanyId = () => {
-  const user = JSON.parse(localStorage.getItem('user') || '{}')
-  return user.companyId || 'comp-1'
-}
+const getUser = () => JSON.parse(localStorage.getItem('user') || '{}')
+const getCompanyId = () => Number(getUser().companyId) || null
 
 const saveCompanyInformation = async () => {
   const errors = TransportCompanyValidator.validate(companyInfo)
@@ -93,7 +91,17 @@ const saveCompanyInformation = async () => {
   try {
     isLoading.value = true
     const id = getCompanyId()
-    await transportCompanyService.updateTransportCompany(id, new TransportCompany({ ...companyInfo, id }))
+    if (!id) { alert('No hay empresa asociada al usuario.'); return }
+    await transportCompanyService.updateCompany(id, {
+      name: companyInfo.name,
+      logoUrl: companyInfo.logo_url,
+      fkIdUser: companyInfo.fkIdUser ?? getUser().id,
+      ruc: companyInfo.ruc,
+      phone: companyInfo.phone,
+      email: companyInfo.email,
+      address: companyInfo.address,
+      description: companyInfo.description
+    })
     showSuccess.value = true
     setTimeout(() => { showSuccess.value = false }, 3000)
   } catch (err) {
@@ -104,11 +112,19 @@ const saveCompanyInformation = async () => {
 }
 
 const loadCompanyInformation = async () => {
+  const id = getCompanyId()
+  if (!id) return
   try {
-    const data = await transportCompanyService.getTransportCompanyById(getCompanyId())
+    const data = await transportCompanyService.getCompanyById(id)
     Object.assign(companyInfo, {
-      name: data.name, logo_url: data.logo_url, ruc: data.ruc,
-      phone: data.phone, email: data.email, address: data.address, description: data.description
+      name: data.name,
+      logo_url: data.logoUrl,
+      fkIdUser: data.fkIdUser,
+      ruc: data.ruc,
+      phone: data.phone,
+      email: data.email,
+      address: data.address,
+      description: data.description
     })
   } catch (err) {
     console.error('Load error:', err)
