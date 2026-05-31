@@ -16,7 +16,7 @@ export default {
 <template>
   <div class="stop-card">
     <div class="stop-image">
-      <img src="https://picsum.photos/seed/stop/200/140" alt="Paradero" />
+      <img :src="stop.imageUrl || 'https://picsum.photos/seed/stop/200/140'" alt="Paradero" @error="$event.target.src = 'https://picsum.photos/seed/stop/200/140'" />
     </div>
     <div class="stop-details">
       <div>

@@ -109,7 +109,6 @@ export class StopService extends BaseService {
                 name: updateData.name,
                 googleMapsUrl: current.googleMapsUrl,
                 imageUrl: current.imageUrl,
-                phone: updateData.phone,
                 fkIdCompany: Number(companyId),
                 address: updateData.address,
                 reference: updateData.reference,
@@ -123,7 +122,6 @@ export class StopService extends BaseService {
                 response.name,
                 response.googleMapsUrl,
                 response.imageUrl,
-                response.phone,
                 response.fkIdCompany,
                 response.fkIdDistrict,
                 response.address,
@@ -151,7 +149,6 @@ export class StopService extends BaseService {
 
             // Agregar campos de texto
             formData.append('Name', stopData.name);
-            formData.append('Phone', stopData.phone);
             formData.append('Address', stopData.address);
             formData.append('Reference', stopData.reference);
             formData.append('FkIdCompany', companyId.toString());
@@ -172,7 +169,6 @@ export class StopService extends BaseService {
             // Log para debugging
             console.log('Enviando datos del paradero:', {
                 name: stopData.name,
-                phone: stopData.phone,
                 address: stopData.address,
                 reference: stopData.reference,
                 companyId: companyId,
@@ -193,7 +189,6 @@ export class StopService extends BaseService {
                 response.data.name,
                 response.data.googleMapsUrl,
                 response.data.imageUrl,
-                response.data.phone,
                 response.data.fkIdCompany,
                 response.data.fkIdDistrict,
                 response.data.address,
@@ -217,7 +212,6 @@ export class StopService extends BaseService {
     _validateStopData(data) {
         const requiredFields = {
             name: 'string',
-            phone: 'string',
             address: 'string',
             reference: 'string'
         };

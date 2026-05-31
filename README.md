@@ -9,15 +9,32 @@ UPC — Fundamentos de arquitectura de software. Plataforma de transporte públi
 ## Inicio rápido
 
 ### Requisitos
-- Node 20+ y npm
+- Node 20+ y **pnpm** (gestor de paquetes del proyecto; npm queda deprecado por vulnerabilidades)
 - Backend corriendo en `http://localhost:5027` (ver `backend/README.md`)
+
+### Instalar pnpm
+
+El proyecto fija `pnpm@11.5.0` (campo `packageManager` en `package.json`). Si no tienes pnpm:
+
+```powershell
+npm install -g pnpm     # bootstrap único
+pnpm --version          # verificar
+```
+
+> Detrás de un antivirus con escaneo HTTPS (Avast/Kaspersky/etc.) o proxy corporativo, `npm`/`pnpm` fallan con `UNABLE_TO_VERIFY_LEAF_SIGNATURE`. Es un MITM de TLS, no una vuln de npm. Fix: exportar el root CA del antivirus a un `.pem` y apuntar Node a él:
+> ```powershell
+> setx NODE_EXTRA_CA_CERTS "C:\ruta\al\root-ca.pem"
+> ```
+> Abrir una terminal nueva tras `setx` para que tome efecto.
 
 ### Setup
 ```bash
 cd Frontend/Frock-frontend-main/Frock-frontend-main/frontend-web
-npm install
-npm run dev -- --port 5173 --strictPort
+pnpm install
+pnpm dev --port 5173 --strictPort
 ```
+
+`pnpm-workspace.yaml` aprueba el build script de `esbuild` (pnpm bloquea scripts de dependencias por defecto). Si tras un `pnpm install` aparece `ERR_PNPM_IGNORED_BUILDS`, confirmar que ese archivo tenga `allowBuilds: { esbuild: true }`.
 
 App disponible en http://localhost:5173. El `--strictPort` evita que Vite salte a 5174 si 5173 está ocupado, lo cual romperia el CORS configurado en el backend.
 
@@ -28,7 +45,7 @@ Get-NetTCPConnection -LocalPort 5173 -State Listen | ForEach-Object { Stop-Proce
 
 ### Variables de entorno
 
-Vite carga `.env`, `.env.development` (en `npm run dev`) y `.env.production` (en `npm run build`). El frontend solo necesita una variable:
+Vite carga `.env`, `.env.development` (en `pnpm dev`) y `.env.production` (en `pnpm build`). El frontend solo necesita una variable:
 
 | Variable | `.env.development` | `.env.production` |
 |---|---|---|
@@ -39,10 +56,10 @@ Vite carga `.env`, `.env.development` (en `npm run dev`) y `.env.production` (en
 ### Scripts
 
 ```bash
-npm run dev           # Vite dev server con HMR
-npm run build         # build de producción a /dist
-npm run preview       # servir el build
-npm run json-server   # mock server (legacy, no usado en producción)
+pnpm dev           # Vite dev server con HMR
+pnpm build         # build de producción a /dist
+pnpm preview       # servir el build
+pnpm json-server   # mock server (legacy, no usado en producción)
 ```
 
 ---
@@ -136,11 +153,13 @@ El selector de distrito en el form de paradero usa `pb-AutoComplete` (PrimeVue) 
 
 | Síntoma | Causa probable | Fix |
 |---|---|---|
-| `timeout of 5000ms exceeded` al hacer login/registro | `VITE_API_BASE_URL` apunta a otro puerto | Editar `.env.development` → `http://localhost:5027/api/`, reiniciar `npm run dev` |
+| `timeout of 5000ms exceeded` al hacer login/registro | `VITE_API_BASE_URL` apunta a otro puerto | Editar `.env.development` → `http://localhost:5027/api/`, reiniciar `pnpm dev` |
 | CORS bloquea `localhost:5174` | Vite saltó al 5174 porque 5173 estaba ocupado | Matar procesos en 5173 (ver arriba) y arrancar con `--strictPort` |
 | `[Vue warn]: Invalid prop "icon": Expected Object, got Function` | Heroicons son render functions, no objetos | Prop debe aceptar `[Object, Function]` |
 | `[Vue warn]: Component inside <Transition> renders non-element root` | Página con fragment como root | Envolver el template en un único `<div>` |
 | Distrito sin opciones | DB vacía: API geográfica externa caída y backend nunca cargó el snapshot | Ver `backend/README.md`, sección "Setup automatizado" |
+| `UNABLE_TO_VERIFY_LEAF_SIGNATURE` en `pnpm install` | Antivirus (Avast) / proxy hace MITM de TLS; falta el root CA | Exportar root CA a `.pem` y `setx NODE_EXTRA_CA_CERTS` (ver "Instalar pnpm") |
+| `ERR_PNPM_IGNORED_BUILDS: esbuild` | pnpm bloquea build scripts de dependencias | `allowBuilds: { esbuild: true }` en `pnpm-workspace.yaml`, luego `pnpm install` |
 
 ---
 

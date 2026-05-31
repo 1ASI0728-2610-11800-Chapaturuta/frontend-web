@@ -1,6 +1,7 @@
 <script>
 import RoutesAlphaList   from "@/discovery/components/routes-alpha/routes-alpha-list.component.vue";
 import RoutesAlphaFilter from "@/discovery/components/routes-alpha/routes-alpha-filter.component.vue";
+import RoutesSearchBar   from "@/discovery/components/routes-alpha/routes-search-bar.component.vue";
 import NearbyStops       from "@/discovery/components/nearby-stops.component.vue";
 import { routeAlphaService } from "@/discovery/services/route-alpha.service.js";
 import { DistrictService }  from "@/geography/services/district.service.js";
@@ -9,15 +10,30 @@ import { ProvinceService }  from "@/geography/services/province.service.js";
 
 export default {
   name: "routes-alpha-dashboard",
-  components: { RoutesAlphaList, RoutesAlphaFilter, NearbyStops },
+  components: { RoutesAlphaList, RoutesAlphaFilter, RoutesSearchBar, NearbyStops },
   data() {
     return {
       regions:   [],
       provinces: [],
       districts: [],
       routes:    [],
+      searchQuery: '',
       isLoading: false,
       error:     null
+    }
+  },
+  computed: {
+    visibleRoutes() {
+      const query = this.searchQuery.trim().toLowerCase()
+      if (!query) return this.routes
+      const tokens = query.split(/\s+/).filter(Boolean)
+      return this.routes.filter(route => {
+        const haystack = (route.stops || [])
+          .map(s => `${s.name || ''} ${s.address || ''}`)
+          .join(' ')
+          .toLowerCase()
+        return tokens.every(token => haystack.includes(token))
+      })
     }
   },
   methods: {
@@ -85,12 +101,12 @@ export default {
       <div class="hero-stats">
         <div class="stat-pill">
           <i class="pi pi-map-marker"></i>
-          <span>{{ routes.length }} rutas</span>
+          <span>{{ visibleRoutes.length }} rutas</span>
         </div>
       </div>
     </div>
 
-    <nearby-stops />
+    <routes-search-bar v-model="searchQuery" />
 
     <routes-alpha-filter
       :regions="regions"
@@ -100,11 +116,13 @@ export default {
       @borrar="handleBorrar"
     />
 
-    <div class="results-header" v-if="!isLoading && routes.length > 0">
-      <span class="results-count">{{ routes.length }} rutas encontradas</span>
+    <div class="results-header" v-if="!isLoading && visibleRoutes.length > 0">
+      <span class="results-count">{{ visibleRoutes.length }} rutas encontradas</span>
     </div>
 
-    <routes-alpha-list :routes="routes" :isLoading="isLoading" :error="error" />
+    <routes-alpha-list :routes="visibleRoutes" :isLoading="isLoading" :error="error" />
+
+    <nearby-stops />
 
   </div>
 </template>

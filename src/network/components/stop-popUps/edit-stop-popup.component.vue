@@ -3,9 +3,12 @@ import { ref } from "vue"; //principalmente lo usamos para el atributo visible d
 import { StopService } from '@/network/services/stop.service.js';
 import { useToast } from 'primevue/usetoast';
 import {GeographyService} from "@/geography/services/geography.service.js";
+import MapPicker from '@/shared/components/MapPicker.vue';
+import { reverseGeocode, buildAddress } from '@/shared/services/reverse-geocode.service.js';
 
 export default {
   name: "popUpEditStop",
+  components: { MapPicker },
 
   setup() {
     const visiblePop = ref(false); //variable visible que controlara la aparicion del popUp
@@ -27,21 +30,23 @@ export default {
       paradero: {
         id: '',
         name: '',
-        phone: '',
         address: '',
         reference: '',
         fk_id_district: 0
       },
       initialParadero: null,
       locationHierarchy: [],
+      districtsFlat: [],
       selectedLocality: null,
-      submitted: false
+      submitted: false,
+      coords: null,
+      geocoding: false,
+      _lastGeocoded: null
     };
   },
   computed: {
     isFormValid() {
       return this.paradero.name &&
-          this.paradero.phone &&
           this.paradero.address &&
           this.paradero.reference &&
           this.paradero.fk_id_district;
@@ -56,6 +61,15 @@ export default {
       try {
         const service = new GeographyService();
         this.locationHierarchy = await service.getFullHierarchy();
+        const flat = [];
+        for (const region of this.locationHierarchy) {
+          for (const prov of (region.provinces || [])) {
+            for (const dist of (prov.districts || [])) {
+              flat.push({ id: dist.id, name: dist.name });
+            }
+          }
+        }
+        this.districtsFlat = flat;
       } catch (err) {
         this.toast.add({
           severity: 'error',
@@ -103,11 +117,72 @@ export default {
         });
       }
     },
+    _normalize(str) {
+      return (str || '')
+        .toString()
+        .normalize('NFD')
+        .replace(/[̀-ͯ]/g, '')
+        .toLowerCase()
+        .trim();
+    },
+
+    matchDistrict(addr) {
+      if (!addr) return null;
+      const candidates = [
+        addr.city_district,
+        addr.county,
+        addr.town,
+        addr.village,
+        addr.city,
+        addr.municipality
+      ];
+      const raw = candidates.find(c => c && c.trim());
+      if (!raw || !this.districtsFlat.length) return null;
+      const target = this._normalize(raw);
+      const exact = this.districtsFlat.filter(d => this._normalize(d.name) === target);
+      if (exact.length === 1) return exact[0];
+      const partial = this.districtsFlat.filter(d => {
+        const n = this._normalize(d.name);
+        return n.includes(target) || target.includes(n);
+      });
+      return partial.length === 1 ? partial[0] : null;
+    },
+
+    async onCoordsChange(coords) {
+      if (!coords || coords.lat == null || coords.lng == null) return;
+      const key = `${coords.lat},${coords.lng}`;
+      if (key === this._lastGeocoded) return; // evita llamadas duplicadas
+      this._lastGeocoded = key;
+
+      this.geocoding = true;
+      try {
+        const result = await reverseGeocode(coords.lat, coords.lng);
+        if (!result || !result.address) return;
+
+        const address = buildAddress(result.address);
+        if (address) {
+          this.paradero.address = address;
+        }
+
+        const match = this.matchDistrict(result.address);
+        if (match) {
+          this.paradero.fk_id_district = match.id;
+        }
+      } catch (err) {
+        // Best-effort: no romper el form si Nominatim falla
+        console.warn('Autorelleno por reverse-geocode falló:', err);
+      } finally {
+        this.geocoding = false;
+      }
+    },
+
     initializeForm() {
+      this.coords = null;
+      this._lastGeocoded = null;
+      this.geocoding = false;
       this.paradero = {
         id: this.stop.id,
         name: this.stop.name || '',
-        phone: this.stop.phone || '',
         address: this.stop.address || '',
         reference: this.stop.reference || '',
         fk_id_district: this.stop.fk_id_district || '',
@@ -125,6 +200,12 @@ export default {
           this.loadDropdowns();
         }
       }
+    },
+    coords: {
+      handler(val) {
+        this.onCoordsChange(val);
+      },
+      deep: true
     }
   }
 };
@@ -149,11 +230,6 @@ export default {
         </pb-IftaLabel>
 
         <pb-IftaLabel class="labelSelectField">
-          <label for="phone">Teléfono</label>
-          <pb-InputText id="phone" v-model="paradero.phone" class="input-field"/>
-        </pb-IftaLabel>
-
-        <pb-IftaLabel class="labelSelectField">
           <label for="address">Dirección</label>
           <pb-InputText id="address" v-model="paradero.address" placeholder="Ej. Av. Norte 789" class="input-field"/>
         </pb-IftaLabel>
@@ -167,6 +243,16 @@ export default {
           <pb-CascadeSelect class="cascade-field" inputId="district" v-model="paradero.fk_id_district" :options="locationHierarchy" option-label="name" option-value="id" option-group-label="name" :option-group-children="['provinces', 'districts']"  placeholder="Selecciona la ubicación"/>
           <label for="district">Distrito</label>
         </pb-IftaLabel>
+
+        <!-- Mapa para autorellenar dirección y distrito -->
+        <div class="map-section">
+          <label class="map-label">Ubicación en el mapa</label>
+          <MapPicker v-model="coords" height="280px" />
+          <small v-if="coords" class="coords-label">Lat: {{ coords.lat }}, Lng: {{ coords.lng }}</small>
+          <small v-if="geocoding" class="geocoding-label">
+            <i class="pi pi-spin pi-spinner"></i> Buscando dirección...
+          </small>
+        </div>
 
 <!--
     EL FK DEL COMPANY VIENE DE LA SESION
@@ -252,6 +338,28 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 30px;
+}
+
+.map-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.map-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #484848;
+}
+
+.coords-label {
+  color: #484848;
+  font-size: 12px;
+}
+
+.geocoding-label {
+  color: #7A78FF;
+  font-size: 12px;
 }
 
 .edit-button{

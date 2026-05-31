@@ -3,6 +3,7 @@ import { ref } from "vue";
 import { StopService } from '@/network/services/stop.service.js';
 import {GeographyService} from "@/geography/services/geography.service.js";
 import MapPicker from '@/shared/components/MapPicker.vue';
+import { reverseGeocode, buildAddress } from '@/shared/services/reverse-geocode.service.js';
 
 export default {
   name: "popUpNewStop",
@@ -26,7 +27,6 @@ export default {
     return {
       paradero: {
         name: '',
-        phone: '',
         address: '',
         reference: '',
         fk_id_district: '',
@@ -39,14 +39,15 @@ export default {
       districtSuggestions: [],
       selectedDistrict: null,
       submitted: false,
-      isUploading: false
+      isUploading: false,
+      geocoding: false,
+      _lastGeocoded: null
     };
   },
 
   computed: {
     isFormValid() {
       return this.paradero.name &&
-          this.paradero.phone &&
           this.paradero.address &&
           this.paradero.reference &&
           this.paradero.fk_id_district &&
@@ -101,6 +102,68 @@ export default {
       const v = event.value;
       this.selectedDistrict = v;
       this.paradero.fk_id_district = v?.id || '';
+    },
+
+    _normalize(str) {
+      return (str || '')
+        .toString()
+        .normalize('NFD')
+        .replace(/[̀-ͯ]/g, '')
+        .toLowerCase()
+        .trim();
+    },
+
+    matchDistrict(addr) {
+      if (!addr) return null;
+      const candidates = [
+        addr.city_district,
+        addr.county,
+        addr.town,
+        addr.village,
+        addr.city,
+        addr.municipality
+      ];
+      const raw = candidates.find(c => c && c.trim());
+      if (!raw || !this.districtsFlat.length) return null;
+      const target = this._normalize(raw);
+      // Match exacto preferido
+      const exact = this.districtsFlat.filter(d => this._normalize(d.name) === target);
+      if (exact.length === 1) return exact[0];
+      // Fallback a includes (en ambos sentidos)
+      const partial = this.districtsFlat.filter(d => {
+        const n = this._normalize(d.name);
+        return n.includes(target) || target.includes(n);
+      });
+      return partial.length === 1 ? partial[0] : null;
+    },
+
+    async onCoordsChange(coords) {
+      if (!coords || coords.lat == null || coords.lng == null) return;
+      const key = `${coords.lat},${coords.lng}`;
+      if (key === this._lastGeocoded) return; // evita llamadas duplicadas
+      this._lastGeocoded = key;
+
+      this.geocoding = true;
+      try {
+        const result = await reverseGeocode(coords.lat, coords.lng);
+        if (!result || !result.address) return;
+
+        const address = buildAddress(result.address);
+        if (address) {
+          this.paradero.address = address;
+        }
+
+        const match = this.matchDistrict(result.address);
+        if (match) {
+          this.selectedDistrict = match;
+          this.paradero.fk_id_district = match.id;
+        }
+      } catch (err) {
+        // Best-effort: no romper el form si Nominatim falla
+        console.warn('Autorelleno por reverse-geocode falló:', err);
+      } finally {
+        this.geocoding = false;
+      }
     },
 
     onImageSelect(event) {
@@ -207,7 +270,6 @@ export default {
     resetForm() {
       this.paradero = {
         name: '',
-        phone: '',
         address: '',
         reference: '',
         fk_id_company: '',
@@ -217,6 +279,8 @@ export default {
         longitude: null
       };
       this.coords = null;
+      this._lastGeocoded = null;
+      this.geocoding = false;
       this.selectedDistrict = null;
       this.districtSuggestions = [];
       this.submitted = false;
@@ -225,6 +289,15 @@ export default {
 
     onDialogHide() {
       this.resetForm();
+    }
+  },
+
+  watch: {
+    coords: {
+      handler(val) {
+        this.onCoordsChange(val);
+      },
+      deep: true
     }
   },
 
@@ -249,12 +322,6 @@ export default {
         <pb-IftaLabel class="labelSelectField">
           <label for="name">Nombre</label>
           <pb-InputText id="name" v-model="paradero.name" class="input-field" />
-        </pb-IftaLabel>
-
-        <!-- Campo de Teléfono -->
-        <pb-IftaLabel class="labelSelectField">
-          <label for="phone">Teléfono</label>
-          <pb-InputText id="phone" v-model="paradero.phone" class="input-field"/>
         </pb-IftaLabel>
 
         <!-- Campo de Dirección -->
@@ -292,6 +359,10 @@ export default {
         <div class="map-section">
           <label class="image-upload-label">Ubicación en el mapa <span style="color:#e57373">*</span></label>
           <MapPicker v-model="coords" height="280px" />
+          <small v-if="coords" class="coords-label">Lat: {{ coords.lat }}, Lng: {{ coords.lng }}</small>
+          <small v-if="geocoding" class="geocoding-label">
+            <i class="pi pi-spin pi-spinner"></i> Buscando dirección...
+          </small>
         </div>
 
         <!-- Campo de Imagen -->
@@ -380,6 +451,22 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+.coords-label {
+  color: var(--color-slate-400);
+  font-size: 12px;
+}
+
+.geocoding-label {
+  color: var(--color-primary);
+  font-size: 12px;
+}
+
+.map-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .image-upload-label {

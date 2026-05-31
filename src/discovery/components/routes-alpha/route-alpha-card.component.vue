@@ -12,7 +12,7 @@ export default {
   >
     <article class="route-card">
       <div class="card-image">
-        <img src="https://picsum.photos/seed/route/300/180" :alt="route.stops[0]?.name" />
+        <img :src="route.stops[0]?.image_url || 'https://picsum.photos/seed/route/300/180'" :alt="route.stops[0]?.name" @error="$event.target.src = 'https://picsum.photos/seed/route/300/180'" />
         <div class="card-badge">
           <i class="pi pi-map-marker"></i>
           {{ route.stops?.length || 0 }} paradas
