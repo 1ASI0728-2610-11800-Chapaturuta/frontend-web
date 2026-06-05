@@ -33,7 +33,7 @@ const stopMarkers = () => (props.route?.stops || [])
 
 <template>
   <pb-Dialog :visible="modelValue" @update:visible="emit('update:modelValue', $event)" modal :style="{ width: '60rem' }">
-    <template #header><h2 style="color: var(--gold-400)">Ruta en el mapa</h2></template>
+    <template #header><h2 style="color: var(--gold-600)">Ruta en el mapa</h2></template>
     <div v-if="loading" style="padding:2rem;text-align:center;">Cargando geometría…</div>
     <div v-else-if="error" style="padding:1rem;color:#e57373;">{{ error }}</div>
     <MapWithMarkers v-else :stops="stopMarkers()" :polyline="polyline" height="500px" />

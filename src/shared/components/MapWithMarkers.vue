@@ -66,7 +66,7 @@ watch(computedCenter, v => { if (v) internalCenter.value = v })
           <div v-if="s.reference" style="font-size:12px;color:#888;">{{ s.reference }}</div>
         </l-popup>
       </l-marker>
-      <l-polyline v-if="polyline?.length" :lat-lngs="polyline" color="#C9A84C" :weight="5" />
+      <l-polyline v-if="polyline?.length" :lat-lngs="polyline" color="#B7A6E0" :weight="5" />
     </l-map>
     <div v-else class="map-loading">Cargando mapa…</div>
   </div>

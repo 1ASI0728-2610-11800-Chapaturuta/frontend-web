@@ -18,7 +18,7 @@ export default {
     <div class="header-main">
       <div>
         <h1 class="page-title">Gestión de <span class="gold">Paraderos</span></h1>
-        <p class="page-sub">Administra los puntos de parada de tu empresa</p>
+        <p class="page-sub">Administra tus puntos de parada como conductor</p>
       </div>
       <div class="header-actions">
         <div class="stat-pill">
@@ -52,7 +52,7 @@ export default {
   color: var(--carbon-50);
   letter-spacing: -0.03em;
 }
-.page-title .gold { color: var(--gold-400); }
+.page-title .gold { color: var(--gold-600); }
 .page-sub { font-size: 0.875rem; color: var(--carbon-400); margin-top: 4px; }
 .header-actions { display: flex; align-items: center; gap: 12px; }
 .stat-pill {
@@ -60,11 +60,11 @@ export default {
   align-items: center;
   gap: 6px;
   padding: 8px 16px;
-  background: rgba(201,168,76,0.08);
-  border: 1px solid rgba(201,168,76,0.2);
+  background: rgba(183,166,224,0.08);
+  border: 1px solid rgba(183,166,224,0.2);
   border-radius: 999px;
   font-size: 13px;
   font-weight: 600;
-  color: var(--gold-400);
+  color: var(--gold-600);
 }
 </style>

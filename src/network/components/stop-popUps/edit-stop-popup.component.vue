@@ -92,9 +92,9 @@ export default {
         return;
       }
       try {
-        // Obtener companyId del localStorage y setearlo en paradero
+        // Obtener driverId del localStorage y setearlo en paradero
         const user = JSON.parse(localStorage.getItem('user'));
-        this.paradero.fk_id_company = user?.companyId || '';
+        this.paradero.fkIdDriver = user?.driverId || '';
 
         const service = new StopService();
         const updated = await service.updateStop(this.paradero.id, this.paradero);
@@ -185,8 +185,8 @@ export default {
         name: this.stop.name || '',
         address: this.stop.address || '',
         reference: this.stop.reference || '',
-        fk_id_district: this.stop.fk_id_district || '',
-        fk_id_company: this.stop.fk_id_company || '',
+        fk_id_district: this.stop.fkIdDistrict ?? this.stop.fk_id_district ?? '',
+        fkIdDriver: this.stop.fkIdDriver ?? '',
       };
       this.initialParadero = { ...this.paradero };
     }
@@ -255,13 +255,9 @@ export default {
         </div>
 
 <!--
-    EL FK DEL COMPANY VIENE DE LA SESION
-
-    <div class="p-field">
-          <label for="company">Empresa</label>
-          <pb-Select id="company" v-model="paradero.fk_id_company" :options="companies" option-label="label" option-value="value" :class="{ 'p-invalid': !paradero.fk_id_company && submitted }" />
-          <small v-if="!paradero.fk_id_company && submitted" class="p-error">La empresa es obligatoria</small>
-        </div>-->
+    EL FK DEL DRIVER VIENE DE LA SESION (se obtiene de localStorage.user.driverId).
+    Ya no existe selección de empresa: el backend asocia la parada al conductor.
+-->
 
         <div class="button-container">
           <pb-Button label="Cancelar" icon="pi pi-times" class="cancel-button" @click="visiblePop = false" />
@@ -276,24 +272,24 @@ export default {
 <style scoped>
 
 .title{
-  color: #7A78FF;
-  border-bottom: #7A78FF solid 1px;
+  color: var(--lilac-600);
+  border-bottom: var(--lilac-600) solid 1px;
   padding: 10px;
 }
 
 .cascade-field {
-  border-color: #CCCCFF;
-  --p-cascadeselect-focus-border-color: #7A78FF;
+  border-color: var(--lilac-300);
+  --p-cascadeselect-focus-border-color: var(--lilac-600);
 }
 
 .labelSelectField{
-  --p-iftalabel-color: #484848;
-  --p-iftalabel-focus-color: #7A78FF;
+  --p-iftalabel-color: var(--carbon-300);
+  --p-iftalabel-focus-color: var(--lilac-600);
 }
 
 .input-field {
-  border-color: #CCCCFF;
-  --p-inputtext-focus-border-color: #7A78FF;
+  border-color: var(--lilac-300);
+  --p-inputtext-focus-border-color: var(--lilac-600);
   width: 100%;
 }
 
@@ -349,16 +345,16 @@ export default {
 .map-label {
   font-size: 14px;
   font-weight: 500;
-  color: #484848;
+  color: var(--carbon-300);
 }
 
 .coords-label {
-  color: #484848;
+  color: var(--carbon-300);
   font-size: 12px;
 }
 
 .geocoding-label {
-  color: #7A78FF;
+  color: var(--lilac-600);
   font-size: 12px;
 }
 

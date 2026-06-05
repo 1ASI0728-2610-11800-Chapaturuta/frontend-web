@@ -47,7 +47,7 @@ export default {
 }
 .search-input:focus {
   border-color: var(--gold-500);
-  box-shadow: 0 0 0 2px rgba(201,168,76,0.2);
+  box-shadow: 0 0 0 2px rgba(183,166,224,0.2);
   outline: none;
 }
 .search-input::placeholder { color: var(--carbon-500); }

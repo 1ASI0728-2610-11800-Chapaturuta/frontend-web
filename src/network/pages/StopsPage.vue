@@ -25,8 +25,8 @@ export default {
       this.error = null;
       try {
         const service = new StopService();
-        const companyId = JSON.parse(localStorage.getItem("user")).companyId;
-        this.stops = await service.getStopsByCompanyId(companyId);
+        const driverId = JSON.parse(localStorage.getItem("user")).driverId;
+        this.stops = await service.getStopsByDriverId(driverId);
       } catch (err) {
         this.error = `Error al cargar paraderos: ${err.message}`;
         this.$toast.add({ severity: 'error', summary: 'Error', detail: this.error });
@@ -74,6 +74,6 @@ export default {
   background: transparent; border: none; color: var(--carbon-400); cursor: pointer;
   padding: 6px 14px; border-radius: 6px; font-size: 13px; display: inline-flex; align-items: center; gap: 6px;
 }
-.view-toggle button.active { background: rgba(201,168,76,0.15); color: var(--gold-400); }
+.view-toggle button.active { background: rgba(183,166,224,0.15); color: var(--gold-600); }
 .view-toggle button:hover:not(.active) { color: var(--carbon-50); }
 </style>

@@ -1,6 +1,8 @@
+// Asociación ruta-parada. El backend (CreateFullRoute) recibe StopsIds: List<int>,
+// pero este DTO se mantiene para representar el vínculo ruta/parada de forma explícita.
 export class CreateRouteStopsDto {
-    constructor(fk_id_route,fk_id_stop ) {
-        this.fk_id_stop = fk_id_stop;
-        this.fk_id_route = fk_id_route;
+    constructor(fkIdRoute, fkIdStop) {
+        this.fkIdStop = fkIdStop;
+        this.fkIdRoute = fkIdRoute;
     }
 }

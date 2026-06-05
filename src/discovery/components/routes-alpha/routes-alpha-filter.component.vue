@@ -152,7 +152,7 @@ export default {
   background: var(--gradient-gold);
   border: none;
   border-radius: var(--radius-md);
-  color: var(--carbon-950);
+  color: var(--ink);
   font-size: 13px;
   font-weight: 700;
   font-family: var(--font-family);

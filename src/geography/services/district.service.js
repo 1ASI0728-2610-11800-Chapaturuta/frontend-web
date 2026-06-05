@@ -9,7 +9,8 @@ export class DistrictService extends BaseService {
     //el get all se incluye gracias a la herencia de BaseService
 
     async getByProvince(provinceId) {
-        const data = await this.http.get(`${this.resourcePath()}?fk_id_province=${provinceId}`);
-        return data.map(item => new District(item));
+        // El backend expone segmentos de ruta: geographic/districts/province/{provinceId}
+        const response = await this.http.get(`${this.resourcePath()}/province/${provinceId}`);
+        return response.data.map(item => new District(item));
     }
 }

@@ -231,9 +231,9 @@ export default {
       try {
         this.isUploading = true;
 
-        // Obtener companyId del localStorage
+        // Obtener driverId del localStorage
         const user = JSON.parse(localStorage.getItem('user'));
-        this.paradero.fk_id_company = user?.companyId || '';
+        this.paradero.fkIdDriver = user?.driverId || '';
 
         const service = new StopService();
         const payload = {
@@ -272,7 +272,7 @@ export default {
         name: '',
         address: '',
         reference: '',
-        fk_id_company: '',
+        fkIdDriver: '',
         fk_id_district: '',
         imageFile: null,
         latitude: null,

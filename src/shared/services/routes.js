@@ -16,15 +16,26 @@ export const APP_ROUTES = {
         COLLECTION: 'collection/:collectionId',
         PROFILE: 'profile',
         TRIPS: 'trips',
+        NOTIFICATIONS: 'notifications',
+        RESERVATIONS: 'reservations',
+        PLANS: 'plans',
+        CHECKOUT: 'checkout',
     },
-    COMPANY:{
-        ROOT: 'company',
+    CONDUCTOR:{
+        ROOT: 'conductor',
         ONBOARDING: 'onboarding',
         HOME: 'home',
         STOPS: 'stops',
         ROUTES: 'routes',
         PROFILE: 'profile',
         INFORMATION: 'information',
-        SUSCRIPTION: 'suscription'
+        SUSCRIPTION: 'suscription',
+        TARIFFS: 'tariffs',
+        ANALYTICS: 'analytics'
+    },
+    ADMIN:{
+        ROOT: 'admin',
+        PLANS: 'plans',
+        ANALYTICS: 'analytics'
     }
 }

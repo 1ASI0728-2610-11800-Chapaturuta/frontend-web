@@ -89,7 +89,7 @@ import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { APP_ROUTES } from '@/shared/services/routes.js'
 import { AuthService } from '@/access-and-identity/services/auth.service.js'
-import { TransportCompanyService } from '@/transport-company/services/transport-company.service.js'
+import { ConductorService } from '@/conductor/services/conductor.service.js'
 
 const { t, locale } = useI18n()
 
@@ -113,33 +113,52 @@ async function handleLogin() {
     const authService = new AuthService()
     const response = await authService.login({ email: email.value, password: password.value })
 
-    // Store with the key BaseService expects
+    // Token estandarizado en 'authToken' (lo lee el interceptor de base-service)
     localStorage.setItem('authToken', response.token)
-    localStorage.setItem('user', JSON.stringify({
+
+    // Datos base del usuario autenticado (AuthenticatedUserResource: id, username, role, token)
+    const user = {
       id: response.id,
       username: response.username,
       role: response.role
-    }))
+    }
+    localStorage.setItem('user', JSON.stringify(user))
 
+    // Pasajero (Traveller = 0): home de descubrimiento
     if (response.role === 0) {
       window.location.href = '/'
       return
     }
 
-    if (response.role === 1) {
-      const companyService = new TransportCompanyService()
+    // Conductor (Driver = 2): resolver su perfil de conductor
+    if (response.role === 2) {
+      const conductorService = new ConductorService()
       try {
-        const companyData = await companyService.getCompanyByFkUserId(response.id)
-        localStorage.setItem('user', JSON.stringify({
-          id: response.id,
-          username: response.username,
-          role: response.role,
-          companyId: companyData.id
-        }))
-        window.location.href = '/company/home'
-      } catch {
-        window.location.href = '/company/onboarding'
+        const driverData = await conductorService.getByUserId(response.id)
+        // Si no existe perfil de conductor todavia, ir al onboarding
+        if (!driverData || !driverData.id) {
+          window.location.href = '/conductor/onboarding'
+          return
+        }
+        // Guardar driverId (id del conductor) en el user de localStorage
+        user.driverId = driverData.id
+        localStorage.setItem('user', JSON.stringify(user))
+        window.location.href = '/conductor/home'
+      } catch (err) {
+        // Conductor sin perfil de driver aun (404/null) -> onboarding
+        if (err?.status === 404) {
+          window.location.href = '/conductor/onboarding'
+          return
+        }
+        throw err
       }
+      return
+    }
+
+    // Admin (Admin = 3): stub de administracion (TODO: panel admin real)
+    if (response.role === 3) {
+      window.location.href = '/admin/plans'
+      return
     }
 
   } catch (err) {
@@ -190,7 +209,7 @@ async function handleLogin() {
   font-family: var(--font-family);
 }
 .lang-switcher button:hover { color: var(--carbon-100); background: var(--carbon-700); }
-.lang-switcher .active { background: var(--gold-500); color: var(--carbon-950); }
+.lang-switcher .active { background: var(--gold-500); color: var(--ink); }
 
 /* ── Logo section ── */
 .logo-section {
@@ -200,7 +219,7 @@ async function handleLogin() {
   gap: 8px;
 }
 .logo-glow {
-  box-shadow: 0 0 32px rgba(201,168,76,0.25);
+  box-shadow: 0 0 32px rgba(183,166,224,0.25);
   border-radius: 50%;
 }
 .logo {
@@ -223,9 +242,9 @@ async function handleLogin() {
 .auth-card {
   width: 100%;
   max-width: 420px;
-  background: rgba(45,45,45,0.8);
+  background: rgba(255,255,255,0.85);
   border-radius: var(--radius-xl);
-  border: 1px solid rgba(201,168,76,0.2);
+  border: 1px solid rgba(183,166,224,0.25);
   padding: 2rem;
   backdrop-filter: blur(12px);
   box-shadow: var(--shadow-elevated);
@@ -277,7 +296,7 @@ async function handleLogin() {
   outline: none;
 }
 .input-wrapper input::placeholder { color: var(--carbon-400); }
-.input-wrapper input:focus { border-color: var(--gold-500); box-shadow: 0 0 0 2px rgba(201,168,76,0.15); }
+.input-wrapper input:focus { border-color: var(--gold-500); box-shadow: 0 0 0 2px rgba(183,166,224,0.15); }
 .field-group.error input { border-color: var(--danger); }
 .field-group small { color: var(--danger); font-size: 11px; }
 .toggle-pwd {
@@ -311,7 +330,7 @@ async function handleLogin() {
   padding: 13px;
   margin-top: 1rem;
   background: var(--gradient-gold);
-  color: var(--carbon-950);
+  color: var(--ink);
   font-weight: 700;
   font-size: 15px;
   font-family: var(--font-family);
@@ -323,7 +342,7 @@ async function handleLogin() {
   justify-content: center;
   gap: 8px;
   transition: opacity var(--duration-fast) ease, box-shadow var(--duration-normal) ease;
-  box-shadow: 0 4px 20px rgba(201,168,76,0.3);
+  box-shadow: 0 4px 20px rgba(183,166,224,0.3);
 }
 .btn-primary:hover:not(:disabled) { opacity: 0.9; box-shadow: var(--shadow-gold); }
 .btn-primary:active:not(:disabled) { transform: scale(0.98); }
@@ -333,7 +352,7 @@ async function handleLogin() {
 .spinner {
   width: 16px;
   height: 16px;
-  border: 2px solid var(--carbon-950);
+  border: 2px solid var(--ink);
   border-top-color: transparent;
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
@@ -347,8 +366,8 @@ async function handleLogin() {
   font-size: 13px;
   color: var(--carbon-400);
 }
-.switch-link a { color: var(--gold-300); text-decoration: none; font-weight: 500; margin-left: 4px; }
-.switch-link a:hover { color: var(--gold-400); }
+.switch-link a { color: var(--gold-600); text-decoration: none; font-weight: 600; margin-left: 4px; }
+.switch-link a:hover { color: var(--lilac-500); }
 
 /* ── Transitions ── */
 .fade-down-enter-active { transition: all var(--duration-slow) var(--ease-out-expo); }

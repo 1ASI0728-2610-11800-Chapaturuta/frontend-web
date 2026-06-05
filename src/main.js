@@ -45,60 +45,59 @@ import '@/assets/styles/variables.css'
 // Router
 import router from './router'
 
-// Build CarbonGold theme on top of Aura
-const CarbonGold = definePreset(Aura, {
+// Tema claro "Lila pastel" sobre Aura (blanco + lila)
+const LilacLight = definePreset(Aura, {
   semantic: {
     primary: {
-      50:  '#F5ECD0',
-      100: '#F5ECD0',
-      200: '#E0C96E',
-      300: '#E0C96E',
-      400: '#D4B85C',
-      500: '#C9A84C',
-      600: '#B8943F',
-      700: '#9A7832',
-      800: '#7A5E27',
-      900: '#5A441C',
-      950: '#3A2C12',
+      50:  '#F3EFFB',
+      100: '#E7DFF6',
+      200: '#D8CEF2',
+      300: '#C9BBEC',
+      400: '#C0AFE7',
+      500: '#B7A6E0',
+      600: '#9A86C9',
+      700: '#806BB3',
+      800: '#66539A',
+      900: '#4D3D78',
+      950: '#322750',
     },
     colorScheme: {
-      dark: {
+      light: {
         surface: {
-          0:   '#0A0A0A',
-          50:  '#1A1A1A',
-          100: '#2D2D2D',
-          200: '#3D3D3D',
-          300: '#4A4A4A',
-          400: '#8A8A8A',
-          500: '#D4D4D4',
-          600: '#E8E8E8',
-          700: '#F5F5F5',
-          800: '#F5F5F5',
-          900: '#F5F5F5',
-          950: '#F5F5F5',
+          0:   '#FFFFFF',
+          50:  '#FAFAFC',
+          100: '#F4F2F9',
+          200: '#ECE7F5',
+          300: '#DED7EC',
+          400: '#9B93AE',
+          500: '#6E6780',
+          600: '#4A4458',
+          700: '#332E40',
+          800: '#272233',
+          900: '#1F1B2E',
+          950: '#161320',
         },
         primary: {
           color:         '{primary.500}',
-          inverseColor:  '#0A0A0A',
-          hoverColor:    '{primary.400}',
-          activeColor:   '{primary.600}',
+          inverseColor:  '#FFFFFF',
+          hoverColor:    '{primary.600}',
+          activeColor:   '{primary.700}',
         },
       }
     }
   }
 })
 
-// Force remove stale auth on startup
-localStorage.removeItem('auth_token')
+// (limpieza de token obsoleto eliminada: la clave correcta es 'authToken' y se gestiona en login/logout)
 
 const app = createApp(App)
 
 app.use(PrimeVue, {
   theme: {
-    preset: CarbonGold,
+    preset: LilacLight,
     options: {
       prefix: 'p',
-      darkModeSelector: ':root',
+      darkModeSelector: '.app-dark',
       cssLayer: false
     }
   }

@@ -1,10 +1,11 @@
+// Alineado con CreateScheduleResource del backend:
+// { dayOfWeek, startTime, endTime, enabled }
+// La ruta se crea junto con los horarios (CreateFullRoute), por eso no se envía routeId.
 export class CreateScheduleDto {
-    constructor(routeId,           // <-- nueva clave foránea
-                dayOfWeek,
+    constructor(dayOfWeek,
                 startTime,
                 endTime,
                 enabled = true) {
-        this.routeId = routeId;
         this.dayOfWeek = dayOfWeek;
         this.startTime = startTime;
         this.endTime = endTime;

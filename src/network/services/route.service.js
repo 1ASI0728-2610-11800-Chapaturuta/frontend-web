@@ -1,7 +1,6 @@
 import { RouteEntity } from '../models/route.entity.js';
 import {BaseService} from "@/shared/services/base-service.js";
 import {StopService} from "@/network/services/stop.service.js";
-import axios from "axios";
 
 export class RouteService extends BaseService{
     constructor() {
@@ -32,7 +31,8 @@ export class RouteService extends BaseService{
                 ],
                 schedules
             };
-            const response = await axios.post(`${this.resourcePath()}`, requestBody);
+            // Usar this.http (instancia con interceptor de auth) para enviar el Bearer token.
+            const response = await this.http.post(`${this.resourcePath()}`, requestBody);
             return response.data;
         } catch (error) {
             throw this._enhanceError(error);
@@ -40,9 +40,14 @@ export class RouteService extends BaseService{
     }
 
 
-    async loadRoutesByCompanyId(companyId) {
+    /**
+     * Obtiene las rutas asociadas a un conductor.
+     * @param {int} driverId - ID del conductor
+     * @returns {Promise<Array>} Lista de rutas
+     */
+    async getRoutesByDriverId(driverId) {
         try {
-            const response = await this.http.get(`${this.resourcePath()}/company/${companyId}`);
+            const response = await this.http.get(`${this.resourcePath()}/driver/${driverId}`);
             return response.data;
         }catch (error) {
             console.log(error)
@@ -59,6 +64,50 @@ export class RouteService extends BaseService{
         }
     }
 
+    /**
+     * Alterna la disponibilidad (isActive) de una ruta.
+     * PATCH routes/{id}/toggle-availability
+     * @param {int} id - ID de la ruta
+     * @returns {Promise} La ruta actualizada
+     */
+    async toggleAvailability(id) {
+        return this.patch(id, {}, 'toggle-availability');
+    }
+
+    /**
+     * Calcula el ETA desde una posición (lat, lng) hasta el destino de la ruta.
+     * GET routes/{id}/eta?lat=&lng=
+     * @param {int} id - ID de la ruta
+     * @param {number} lat - Latitud de la posición actual
+     * @param {number} lng - Longitud de la posición actual
+     * @returns {Promise} { routeId, etaSeconds, etaMinutes }
+     */
+    async getEta(id, lat, lng) {
+        try {
+            const response = await this.http.get(`${this.resourcePath()}/${id}/eta`, {
+                params: { lat, lng }
+            });
+            return response.data;
+        } catch (error) {
+            throw this._enhanceError(error);
+        }
+    }
+
+    /**
+     * Obtiene las rutas asociadas a un distrito.
+     * GET routes/district/{districtId}
+     * @param {int} districtId - ID del distrito
+     * @returns {Promise<Array>} Lista de rutas
+     */
+    async getByDistrict(districtId) {
+        try {
+            const response = await this.http.get(`${this.resourcePath()}/district/${districtId}`);
+            return response.data;
+        } catch (error) {
+            throw this._enhanceError(error);
+        }
+    }
+
     async getGeometry(routeId) {
         try {
             const r = await this.http.get(`${this.resourcePath()}/${routeId}/geometry`);
@@ -68,9 +117,10 @@ export class RouteService extends BaseService{
         }
     }
 
-    async previewRoute(stopIds) {
+    async previewRoute(coordinates) {
         try {
-            const r = await this.http.post(`${this.resourcePath()}/preview`, { stopsIds: stopIds });
+            // El backend (POST routes/preview) espera { coordinates: [{ latitude, longitude }] }
+            const r = await this.http.post(`${this.resourcePath()}/preview`, { coordinates });
             return {
                 distanceMeters: r.data.distanceMeters,
                 durationSeconds: r.data.durationSeconds,

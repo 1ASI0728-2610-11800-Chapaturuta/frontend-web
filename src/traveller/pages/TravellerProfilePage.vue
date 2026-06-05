@@ -93,14 +93,14 @@ const logout = () => {
 }
 .avatar {
   width: 72px; height: 72px;
-  background: rgba(201,168,76,0.15);
+  background: rgba(183,166,224,0.15);
   border: 2px solid var(--gold-500);
   border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
-  box-shadow: 0 0 24px rgba(201,168,76,0.3);
+  box-shadow: 0 0 24px rgba(183,166,224,0.3);
 }
-.avatar-initials { font-size: 1.5rem; font-weight: 700; color: var(--gold-400); }
+.avatar-initials { font-size: 1.5rem; font-weight: 700; color: var(--gold-600); }
 .profile-name { font-size: 1.25rem; font-weight: 700; color: var(--carbon-50); }
 .profile-email { font-size: 0.85rem; color: var(--carbon-400); margin-top: 2px; }
 .role-badge {
@@ -109,12 +109,12 @@ const logout = () => {
   gap: 5px;
   margin-top: 8px;
   padding: 4px 10px;
-  background: rgba(201,168,76,0.1);
-  border: 1px solid rgba(201,168,76,0.25);
+  background: rgba(183,166,224,0.1);
+  border: 1px solid rgba(183,166,224,0.25);
   border-radius: 999px;
   font-size: 11px;
   font-weight: 600;
-  color: var(--gold-400);
+  color: var(--gold-600);
 }
 
 .profile-stats {
@@ -132,7 +132,7 @@ const logout = () => {
   border: 1px solid var(--carbon-700);
   border-radius: var(--radius-lg);
 }
-.stat-num { font-size: 1.75rem; font-weight: 700; color: var(--gold-400); letter-spacing: -0.03em; }
+.stat-num { font-size: 1.75rem; font-weight: 700; color: var(--gold-600); letter-spacing: -0.03em; }
 .stat-label { font-size: 0.75rem; color: var(--carbon-400); }
 
 .menu-list { display: flex; flex-direction: column; gap: 8px; }
@@ -153,7 +153,7 @@ const logout = () => {
 .menu-item:hover { border-color: var(--gold-500); }
 .menu-icon {
   width: 36px; height: 36px;
-  background: rgba(201,168,76,0.08);
+  background: rgba(183,166,224,0.08);
   border-radius: var(--radius-sm);
   display: flex; align-items: center; justify-content: center;
   color: var(--gold-500);

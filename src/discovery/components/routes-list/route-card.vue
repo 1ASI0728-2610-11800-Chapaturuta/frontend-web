@@ -34,7 +34,8 @@ defineProps({
 /* Contenedor de cada tarjeta */
 .card-stop-container {
   border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -48,7 +49,7 @@ defineProps({
   width: 100%;
   height: 180px;
   object-fit: cover;
-  background-color: #e1e4e8; /* placeholder */
+  background-color: var(--carbon-700); /* placeholder */
 }
 
 /* Contenido interno */
@@ -64,19 +65,19 @@ defineProps({
   font-size: 1rem;
   margin: 0 0 0.25rem;
   font-weight: 600;
-  color: #333;
+  color: var(--carbon-100);
 }
 
 /* Destino */
 .card-stop-content p {
   font-size: 0.875rem;
   margin: 0 0 0.5rem;
-  color: #555;
+  color: var(--carbon-400);
 }
 .card-stop-content p span {
   font-weight: 700;
   margin-right: 0.25rem;
-  color: #222;
+  color: var(--carbon-200);
 }
 
 /* Sección de íconos */
@@ -97,7 +98,7 @@ defineProps({
 .card-stop-content .icon {
   width: 16px;
   height: 16px;
-  color: #7A78FF;
+  color: var(--lilac-600);
 }
 
 /* Precio */
@@ -105,7 +106,7 @@ defineProps({
   margin-top: auto;
   font-size: 1rem;
   font-weight: 700;
-  color: #1a73e8;
+  color: var(--lilac-600);
 }
 
 </style>

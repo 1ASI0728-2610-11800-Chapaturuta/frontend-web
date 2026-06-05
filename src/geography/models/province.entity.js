@@ -1,9 +1,10 @@
 export class Province {
-    constructor({ id, name, regionId }) {
-        if (!id || !name || !regionId) throw new Error('Datos incompletos');
+    constructor({ id, name, fkIdRegion }) {
+        if (!id || !name || !fkIdRegion) throw new Error('Datos incompletos');
         this.id = id;
         this.name = name;
-        this.regionId = regionId;
+        // El backend (ProvinceResource) serializa la clave foránea como camelCase fkIdRegion
+        this.fkIdRegion = fkIdRegion;
     }
 
     toSelectOption() {

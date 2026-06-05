@@ -77,7 +77,7 @@ export default {
   color: var(--carbon-50);
   letter-spacing: -0.03em;
 }
-.section-title .gold { color: var(--gold-400); }
+.section-title .gold { color: var(--gold-600); }
 .section-sub { font-size: 0.875rem; color: var(--carbon-400); }
 
 .plans-grid {
@@ -100,11 +100,11 @@ export default {
 }
 .plan-card:hover {
   border-color: var(--carbon-600);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+  box-shadow: var(--shadow-elevated);
 }
 .plan-card.featured {
   border-color: var(--gold-500);
-  box-shadow: 0 4px 24px rgba(201,168,76,0.2);
+  box-shadow: 0 4px 24px rgba(183,166,224,0.2);
 }
 
 .popular-badge {
@@ -113,7 +113,7 @@ export default {
   left: 50%;
   transform: translateX(-50%);
   background: var(--gradient-gold);
-  color: var(--carbon-950);
+  color: var(--ink);
   font-size: 11px;
   font-weight: 700;
   padding: 4px 14px;
@@ -123,7 +123,7 @@ export default {
 
 .plan-name { font-size: 1.125rem; font-weight: 700; color: var(--carbon-100); }
 .plan-price { display: flex; align-items: baseline; gap: 4px; }
-.price-amount { font-size: 2rem; font-weight: 700; color: var(--gold-400); letter-spacing: -0.04em; }
+.price-amount { font-size: 2rem; font-weight: 700; color: var(--gold-600); letter-spacing: -0.04em; }
 .price-period { font-size: 0.85rem; color: var(--carbon-400); }
 .plan-detail { font-size: 0.85rem; color: var(--carbon-400); }
 
@@ -143,7 +143,7 @@ export default {
   font-size: 0.85rem;
   color: var(--carbon-300);
 }
-.plan-features li i { color: var(--gold-500); font-size: 11px; }
+.plan-features li i { color: var(--gold-600); font-size: 11px; }
 
 .plan-btn {
   display: flex;
@@ -160,11 +160,11 @@ export default {
   transition: all var(--duration-fast) ease;
   margin-top: 0.5rem;
 }
-.plan-btn:hover { border-color: var(--gold-500); color: var(--gold-400); }
+.plan-btn:hover { border-color: var(--gold-500); color: var(--gold-600); }
 .plan-btn-gold {
   background: var(--gradient-gold);
-  color: var(--carbon-950);
+  color: var(--ink);
   border: none;
 }
-.plan-btn-gold:hover { opacity: 0.88; color: var(--carbon-950); }
+.plan-btn-gold:hover { opacity: 0.88; color: var(--ink); }
 </style>

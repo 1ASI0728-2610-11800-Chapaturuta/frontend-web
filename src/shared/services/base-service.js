@@ -57,8 +57,12 @@ export class BaseService {
      */
     _enhanceError(error) {
         const enhancedError = new Error(error.message);
-        enhancedError.status = error.response?.status;
-        enhancedError.data = error.response?.data;
+        // Idempotente: si el error YA fue envuelto (por el interceptor de respuesta o
+        // por otro servicio), ya no tiene `.response`; preservamos status/data
+        // tomándolos también del propio error enriquecido. Sin esto, un re-enhance
+        // pierde el status (p. ej. un 404 se vuelve undefined).
+        enhancedError.status = error.response?.status ?? error.status;
+        enhancedError.data = error.response?.data ?? error.data;
         enhancedError.config = error.config;
         return enhancedError;
     }
@@ -115,6 +119,26 @@ export class BaseService {
         try {
             const response = await this.http.put(
                 `${this.resourcePath()}/${id}`,
+                JSON.stringify(resource)
+            );
+            return response.data;
+        } catch (error) {
+            throw this._enhanceError(error);
+        }
+    }
+
+    /**
+     * Partially updates a resource (PATCH). Backend usa PATCH para drivers/tariffs/routes.
+     * @param {string|number} id
+     * @param {Object} resource
+     * @param {string} subpath - opcional, ej. 'vehicle' o 'availability'
+     * @returns {Promise}
+     */
+    async patch(id, resource = {}, subpath = '') {
+        try {
+            const tail = subpath ? `/${subpath}` : '';
+            const response = await this.http.patch(
+                `${this.resourcePath()}/${id}${tail}`,
                 JSON.stringify(resource)
             );
             return response.data;

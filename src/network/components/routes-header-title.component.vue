@@ -8,7 +8,7 @@ const emit = defineEmits(["created"])
     <div class="header-main">
       <div>
         <h1 class="page-title">Gestión de <span class="gold">Rutas</span></h1>
-        <p class="page-sub">Administra las rutas de transporte de tu empresa</p>
+        <p class="page-sub">Administra tus rutas de transporte como conductor</p>
       </div>
       <new-route-popup-component @created="emit('created')" />
     </div>
@@ -36,6 +36,6 @@ const emit = defineEmits(["created"])
   color: var(--carbon-50);
   letter-spacing: -0.03em;
 }
-.page-title .gold { color: var(--gold-400); }
+.page-title .gold { color: var(--gold-600); }
 .page-sub { font-size: 0.875rem; color: var(--carbon-400); margin-top: 4px; }
 </style>

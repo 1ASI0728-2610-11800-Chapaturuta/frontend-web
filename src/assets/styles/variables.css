@@ -1,12 +1,13 @@
 :root {
-    /* Legacy aliases — kept for popup components that still reference these */
-    --color-primary: var(--gold-500);
-    --color-off: var(--carbon-600);
-    --color-secondary: var(--carbon-800);
-    --color-tertiary-gray: var(--carbon-700);
-    --color-tertiary-inputs: var(--gold-600);
-    --color-text: var(--carbon-100);
-    --color-white: var(--carbon-800);
+    /* Aliases legacy — usados por popups del módulo network.
+     * Tema claro (blanco + lila pastel); resuelven contra las rampas de App.vue. */
+    --color-primary: var(--gold-500);        /* lila acento */
+    --color-off: var(--carbon-600);          /* gris lila claro */
+    --color-secondary: var(--carbon-800);    /* superficie clara */
+    --color-tertiary-gray: var(--carbon-700);/* borde claro */
+    --color-tertiary-inputs: var(--gold-600);/* lila hover */
+    --color-text: var(--carbon-100);         /* tinta */
+    --color-white: #FFFFFF;                   /* blanco real */
     --color-slate-300: var(--carbon-200);
     --color-slate-400: var(--carbon-400);
 }

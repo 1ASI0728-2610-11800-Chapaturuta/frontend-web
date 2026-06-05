@@ -6,37 +6,37 @@ export class StopService extends BaseService {
     constructor() {
         super('stops');
         this.geographyService = new GeographyService();
-        this.companyService = new BaseService('companies');
+        // El backend eliminó el bounded context "companies"; las paradas ahora se
+        // asocian a un driver. Ya no se instancia BaseService('companies').
     }
 
     /**
-     * Obtiene paraderos por ID de compañía con información enriquecida
-     * @param {int} companyId - ID de la compañía
+     * Obtiene paraderos por ID de conductor con información enriquecida
+     * @param {int} driverId - ID del conductor
      * @returns {Promise<Array>} Lista de paraderos con datos completos
      */
-    async getStopsByCompanyId(companyId) {
+    async getStopsByDriverId(driverId) {
         try {
-            const response = await this.http.get(`${this.resourcePath()}/company/${companyId}`);
+            const response = await this.http.get(`${this.resourcePath()}/driver/${driverId}`);
             const stops = response.data;
 
-            // Enriquecer cada paradero con información adicional
+            // Enriquecer cada paradero con información de ubicación (distrito/provincia/región)
             return Promise.all(
                 stops.map(async stop => {
                     try {
                         const locationDetails = await this.geographyService.getLocationDetails(stop.fkIdDistrict);
-                        const companyName = await this._getCompanyName(stop.fkIdCompany);
 
                         return {
                             ...stop,
-                            location: locationDetails?.fullPath || 'Ubicación no disponible',
-                            companyName: companyName || 'Empresa no disponible'
+                            location: locationDetails?.fullPath || 'Ubicación no disponible'
+                            // TODO: si se requiere el nombre del conductor, obtenerlo del BC Driver.
+                            // Ya no existe endpoint companies para enriquecer con nombre de empresa.
                         };
                     } catch (error) {
                         console.warn(`Error enriqueciendo datos del paradero ${stop.id}:`, error);
                         return {
                             ...stop,
-                            location: 'Ubicación no disponible',
-                            companyName: 'Empresa no disponible'
+                            location: 'Ubicación no disponible'
                         };
                     }
                 })
@@ -48,15 +48,15 @@ export class StopService extends BaseService {
 
     /**
      * Obtiene paraderos formateados para uso en componentes de selección (Dropdown/Select)
-     * @param {int} companyId - ID de la compañía
+     * @param {int} driverId - ID del conductor
      * @returns {Promise<Array<{label: string, value: string}>>}
      */
-    async getStopsForSelect(companyId) {
+    async getStopsForSelect(driverId) {
         try {
-            if (!companyId) {
-                throw new Error('ID de compañía inválido');
+            if (!driverId) {
+                throw new Error('ID de conductor inválido');
             }
-            const response = await this.http.get(`${this.resourcePath()}/company/${companyId}`);
+            const response = await this.http.get(`${this.resourcePath()}/driver/${driverId}`);
             const stops = response.data;
 
             return stops.map(stop => ({
@@ -101,7 +101,7 @@ export class StopService extends BaseService {
             }
             this._validateStopData(updateData);
 
-            const companyId = this._getCompanyIdFromLocalStorage();
+            const driverId = this._getDriverIdFromLocalStorage();
             const current = await super.getById(id);
 
             const updatedData = {
@@ -109,7 +109,7 @@ export class StopService extends BaseService {
                 name: updateData.name,
                 googleMapsUrl: current.googleMapsUrl,
                 imageUrl: current.imageUrl,
-                fkIdCompany: Number(companyId),
+                fkIdDriver: Number(driverId),
                 address: updateData.address,
                 reference: updateData.reference,
                 fkIdDistrict: updateData.fk_id_district
@@ -122,7 +122,7 @@ export class StopService extends BaseService {
                 response.name,
                 response.googleMapsUrl,
                 response.imageUrl,
-                response.fkIdCompany,
+                response.fkIdDriver,
                 response.fkIdDistrict,
                 response.address,
                 response.reference,
@@ -142,7 +142,7 @@ export class StopService extends BaseService {
             // Validaciones
             this._validateStopData(stopData);
 
-            const companyId = this._getCompanyIdFromLocalStorage();
+            const driverId = this._getDriverIdFromLocalStorage();
 
             // Crear FormData para enviar archivos
             const formData = new FormData();
@@ -151,7 +151,7 @@ export class StopService extends BaseService {
             formData.append('Name', stopData.name);
             formData.append('Address', stopData.address);
             formData.append('Reference', stopData.reference);
-            formData.append('FkIdCompany', companyId.toString());
+            formData.append('FkIdDriver', driverId.toString());
             formData.append('FkIdDistrict', stopData.fk_id_district);
             const lat = stopData.latitude ?? stopData.lat;
             const lng = stopData.longitude ?? stopData.lng;
@@ -171,7 +171,7 @@ export class StopService extends BaseService {
                 name: stopData.name,
                 address: stopData.address,
                 reference: stopData.reference,
-                companyId: companyId,
+                driverId: driverId,
                 district: stopData.fk_id_district,
                 hasImage: !!stopData.imageFile
             });
@@ -189,7 +189,7 @@ export class StopService extends BaseService {
                 response.data.name,
                 response.data.googleMapsUrl,
                 response.data.imageUrl,
-                response.data.fkIdCompany,
+                response.data.fkIdDriver,
                 response.data.fkIdDistrict,
                 response.data.address,
                 response.data.reference,
@@ -197,15 +197,6 @@ export class StopService extends BaseService {
         } catch (error) {
             console.error('Error al crear paradero:', error);
             throw this._enhanceError(error);
-        }
-    }
-
-    async _getCompanyName(companyId) {
-        try {
-            const company = await this.companyService.getById(companyId);
-            return company?.name || 'Desconocido';
-        } catch {
-            return 'Desconocido';
         }
     }
 
@@ -223,16 +214,16 @@ export class StopService extends BaseService {
         });
     }
 
-    _getCompanyIdFromLocalStorage() {
+    _getDriverIdFromLocalStorage() {
         try {
             const userData = JSON.parse(localStorage.getItem('user'));
-            if (!userData || !userData.companyId) {
-                throw new Error('No se encontró ID de compañía en el usuario autenticado');
+            if (!userData || !userData.driverId) {
+                throw new Error('No se encontró ID de conductor en el usuario autenticado');
             }
-            return Number(userData.companyId);
+            return Number(userData.driverId);
         } catch (error) {
-            console.error('Error al obtener companyId del localStorage:', error);
-            throw new Error('No se pudo obtener el ID de la compañía');
+            console.error('Error al obtener driverId del localStorage:', error);
+            throw new Error('No se pudo obtener el ID del conductor');
         }
     }
 

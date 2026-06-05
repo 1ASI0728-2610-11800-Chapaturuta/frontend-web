@@ -1,5 +1,5 @@
 <script>
-import { TransportCompanyService } from '@/transport-company/services/transport-company.service.js'
+import { ConductorService } from '@/conductor/services/conductor.service.js'
 import RouteAlphaCard from "./route-alpha-card.component.vue";
 
 export default {
@@ -27,14 +27,17 @@ export default {
   },
   methods: {
     async processRoutes(routes) {
-      const svc = new TransportCompanyService()
+      // El concepto "empresa" fue refactorizado a "conductor": el nombre proviene del driver de la parada.
+      const svc = new ConductorService()
       const results = await Promise.all(
         routes.map(async (route) => {
           try {
-            const company = await svc.getCompanyById(route.stops[0].fk_company_id)
-            return { ...route, companyName: company.name }
+            const driverId = route.stops?.[0]?.fk_driver_id
+            const driver = await svc.getById(driverId)
+            const name = [driver.firstName, driver.lastName].filter(Boolean).join(' ').trim()
+            return { ...route, companyName: name || 'Conductor' }
           } catch {
-            return { ...route, companyName: 'Empresa' }
+            return { ...route, companyName: 'Conductor' }
           }
         })
       )

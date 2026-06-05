@@ -16,15 +16,25 @@
         <router-link :to="`/${APP_ROUTES.TRAVELLER.ROOT}/${APP_ROUTES.TRAVELLER.TRIPS}`" class="nav-link">
           <i class="pi pi-map nav-icon"></i>Viajes
         </router-link>
+        <router-link :to="`/${APP_ROUTES.TRAVELLER.ROOT}/${APP_ROUTES.TRAVELLER.RESERVATIONS}`" class="nav-link">
+          <i class="pi pi-ticket nav-icon"></i>Reservas
+        </router-link>
+        <router-link :to="`/${APP_ROUTES.TRAVELLER.ROOT}/${APP_ROUTES.TRAVELLER.PLANS}`" class="nav-link">
+          <i class="pi pi-star nav-icon"></i>Planes
+        </router-link>
         <router-link :to="`/${APP_ROUTES.TRAVELLER.ROOT}/${APP_ROUTES.TRAVELLER.PROFILE}`" class="nav-link">
           <i class="pi pi-user nav-icon"></i>Perfil
         </router-link>
       </nav>
 
       <div class="header-actions">
-        <button class="notif-btn">
+        <router-link
+          v-if="isLoggedIn"
+          :to="`/${APP_ROUTES.TRAVELLER.ROOT}/${APP_ROUTES.TRAVELLER.NOTIFICATIONS}`"
+          class="notif-btn"
+        >
           <i class="pi pi-bell"></i>
-        </button>
+        </router-link>
         <template v-if="isLoggedIn">
           <router-link :to="`/${APP_ROUTES.TRAVELLER.ROOT}/${APP_ROUTES.TRAVELLER.PROFILE}`" class="btn-profile">
             <div class="profile-avatar"><i class="pi pi-user"></i></div>
@@ -68,7 +78,7 @@ export default {
   z-index: 100;
   background: var(--carbon-950);
   border-bottom: 1px solid var(--carbon-700);
-  box-shadow: 0 2px 20px rgba(0,0,0,0.4);
+  box-shadow: var(--shadow-card);
 }
 .header-inner {
   max-width: 1280px;
@@ -116,8 +126,8 @@ export default {
 }
 .nav-link:hover { color: var(--carbon-100); background: var(--carbon-800); }
 .nav-link.router-link-active {
-  color: var(--gold-500);
-  background: rgba(201,168,76,0.1);
+  color: var(--gold-600);
+  background: rgba(183,166,224,0.16);
   font-weight: 600;
 }
 
@@ -129,6 +139,10 @@ export default {
 }
 .notif-btn {
   position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
   background: var(--carbon-800);
   border: 1px solid var(--carbon-700);
   border-radius: var(--radius-sm);
@@ -144,7 +158,7 @@ export default {
   top: 4px;
   right: 4px;
   background: var(--gold-500);
-  color: var(--carbon-950);
+  color: var(--ink);
   font-size: 9px;
   font-weight: 700;
   width: 14px;
@@ -166,7 +180,7 @@ export default {
 }
 .btn-signin:hover {
   background: var(--gold-500);
-  color: var(--carbon-950);
+  color: var(--ink);
 }
 .btn-profile {
   display: flex;
@@ -185,7 +199,7 @@ export default {
 .btn-profile:hover { border-color: var(--gold-500); }
 .profile-avatar {
   width: 26px; height: 26px;
-  background: rgba(201,168,76,0.15);
+  background: rgba(183,166,224,0.15);
   border: 1px solid var(--gold-500);
   border-radius: 50%;
   display: flex; align-items: center; justify-content: center;

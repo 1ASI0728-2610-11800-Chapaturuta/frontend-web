@@ -19,13 +19,13 @@ const loadRoutes = async () => {
   try {
     const json = JSON.parse(localStorage.getItem('user'));
     const routeAppService = new RouteService();
-    routes.value = await routeAppService.loadRoutesByCompanyId(json.companyId);
+    routes.value = await routeAppService.getRoutesByDriverId(json.driverId);
   } catch (err) {
     let message = "Error al cargar rutas";
     // Si el error es de Axios (o similar), tendrá error.response
     routes.value = []
     if (err.value) {
-      message = "No se encontraron rutas para esta empresa (404).";
+      message = "No se encontraron rutas para este conductor (404).";
     } else if (err.message) {
       if (err.message.includes('404') || err.message.includes('encontrado')) {
         return ;

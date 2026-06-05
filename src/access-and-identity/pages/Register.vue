@@ -59,8 +59,8 @@
             <label>{{ t('register.selectRole') }}</label>
             <select v-model="role" @blur="touched.role = true">
               <option disabled value="">{{ t('register.selectRole') }}</option>
-              <option value="0">{{ t('register.driver') }}</option>
-              <option value="1">{{ t('register.manager') }}</option>
+              <option value="0">{{ t('register.traveller') }}</option>
+              <option value="2">{{ t('register.driver') }}</option>
             </select>
             <small v-if="touched.role && !role">{{ t('register.selectRequired') }}</small>
           </div>
@@ -178,19 +178,19 @@ async function handleSubmit() {
   font-family: var(--font-family);
 }
 .lang-switcher button:hover { color: var(--carbon-100); background: var(--carbon-700); }
-.lang-switcher .active { background: var(--gold-500); color: var(--carbon-950); }
+.lang-switcher .active { background: var(--gold-500); color: var(--ink); }
 
 .logo-section { display: flex; flex-direction: column; align-items: center; gap: 8px; }
-.logo-glow { box-shadow: 0 0 32px rgba(201,168,76,0.25); border-radius: 50%; }
+.logo-glow { box-shadow: 0 0 32px rgba(183,166,224,0.25); border-radius: 50%; }
 .logo { height: 72px; object-fit: contain; border-radius: 50%; }
 .brand { font-size: 1.5rem; font-weight: 700; color: var(--carbon-50); letter-spacing: -0.03em; }
 
 .auth-card {
   width: 100%;
   max-width: 480px;
-  background: rgba(45,45,45,0.8);
+  background: rgba(255,255,255,0.85);
   border-radius: var(--radius-xl);
-  border: 1px solid rgba(201,168,76,0.2);
+  border: 1px solid rgba(183,166,224,0.25);
   padding: 2rem;
   backdrop-filter: blur(12px);
   box-shadow: var(--shadow-elevated);
@@ -228,7 +228,7 @@ async function handleSubmit() {
 .input-wrapper input { padding-left: 36px; }
 .field-group input::placeholder { color: var(--carbon-400); }
 .field-group input:focus,
-.field-group select:focus { border-color: var(--gold-500); box-shadow: 0 0 0 2px rgba(201,168,76,0.15); }
+.field-group select:focus { border-color: var(--gold-500); box-shadow: 0 0 0 2px rgba(183,166,224,0.15); }
 .field-group.error input,
 .field-group.error select { border-color: var(--danger); }
 .field-group small { color: var(--danger); font-size: 11px; }
@@ -245,23 +245,23 @@ async function handleSubmit() {
 
 .btn-primary {
   width: 100%; padding: 13px; margin-top: 0.5rem;
-  background: var(--gradient-gold); color: var(--carbon-950);
+  background: var(--gradient-gold); color: var(--ink);
   font-weight: 700; font-size: 15px; font-family: var(--font-family);
   border: none; border-radius: var(--radius-md); cursor: pointer;
   display: flex; align-items: center; justify-content: center; gap: 8px;
   transition: opacity var(--duration-fast) ease, box-shadow var(--duration-normal) ease;
-  box-shadow: 0 4px 20px rgba(201,168,76,0.3);
+  box-shadow: 0 4px 20px rgba(183,166,224,0.3);
 }
 .btn-primary:hover:not(:disabled) { opacity: 0.9; }
 .btn-primary:active:not(:disabled) { transform: scale(0.98); }
 .btn-primary:disabled { background: var(--carbon-700); color: var(--carbon-400); cursor: not-allowed; box-shadow: none; }
 
-.spinner { width: 16px; height: 16px; border: 2px solid var(--carbon-950); border-top-color: transparent; border-radius: 50%; animation: spin 0.7s linear infinite; }
+.spinner { width: 16px; height: 16px; border: 2px solid var(--ink); border-top-color: transparent; border-radius: 50%; animation: spin 0.7s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 .switch-link { margin-top: 1.25rem; text-align: center; font-size: 13px; color: var(--carbon-400); }
-.switch-link a { color: var(--gold-300); text-decoration: none; font-weight: 500; margin-left: 4px; }
-.switch-link a:hover { color: var(--gold-400); }
+.switch-link a { color: var(--gold-600); text-decoration: none; font-weight: 600; margin-left: 4px; }
+.switch-link a:hover { color: var(--lilac-500); }
 
 .fade-down-enter-active { transition: all var(--duration-slow) var(--ease-out-expo); }
 .fade-down-enter-from   { opacity: 0; transform: translateY(-16px); }

@@ -11,9 +11,9 @@
     </div>
 
     <div class="toolbar-center">
-      <router-link to="/company/home" class="nav-item">Inicio</router-link>
-      <router-link to="/company/stops" class="nav-item">Paraderos</router-link>
-      <router-link to="/company/routes" class="nav-item">Rutas</router-link>
+      <router-link to="/conductor/home" class="nav-item">Inicio</router-link>
+      <router-link to="/conductor/stops" class="nav-item">Paraderos</router-link>
+      <router-link to="/conductor/routes" class="nav-item">Rutas</router-link>
     </div>
 
     <div class="toolbar-right">
@@ -45,11 +45,12 @@ export default {
       this.showDropdown = !this.showDropdown;
     },
     logout() {
-      // Eliminar el token de autenticación
-      localStorage.removeItem('auth_token');
+      // Eliminar el token de autenticación y el usuario
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('user');
 
       // Redireccionar a la página de login
-      this.$router.push('/login');
+      this.$router.push('/auth/login');
     }
   }
 }
@@ -101,7 +102,7 @@ export default {
 }
 
 .nav-item.router-link-active {
-  color: #7A78FF;
+  color: var(--lilac-600, #9A86C9);
   font-weight: 500;
 }
 

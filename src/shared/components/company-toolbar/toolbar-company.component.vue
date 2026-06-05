@@ -8,17 +8,23 @@
       </div>
 
       <nav class="header-nav">
-        <router-link to="/company/home"   class="nav-link">
+        <router-link to="/conductor/home"   class="nav-link">
           <i class="pi pi-home nav-icon"></i>Inicio
         </router-link>
-        <router-link to="/company/stops"  class="nav-link">
+        <router-link to="/conductor/stops"  class="nav-link">
           <i class="pi pi-map-marker nav-icon"></i>Paraderos
         </router-link>
-        <router-link to="/company/routes" class="nav-link">
+        <router-link to="/conductor/routes" class="nav-link">
           <i class="pi pi-directions nav-icon"></i>Rutas
         </router-link>
-        <router-link to="/company/information" class="nav-link">
-          <i class="pi pi-building nav-icon"></i>Empresa
+        <router-link to="/conductor/tariffs" class="nav-link">
+          <i class="pi pi-dollar nav-icon"></i>Tarifas
+        </router-link>
+        <router-link to="/conductor/analytics" class="nav-link">
+          <i class="pi pi-chart-bar nav-icon"></i>Analítica
+        </router-link>
+        <router-link to="/conductor/information" class="nav-link">
+          <i class="pi pi-id-card nav-icon"></i>Conductor
         </router-link>
       </nav>
 
@@ -77,9 +83,9 @@ export default {
   position: sticky;
   top: 0;
   z-index: 100;
-  background: var(--carbon-950);
+  background: var(--surface, #FFFFFF);
   border-bottom: 1px solid var(--carbon-700);
-  box-shadow: 0 2px 20px rgba(0,0,0,0.4);
+  box-shadow: var(--shadow-card);
 }
 .header-inner {
   max-width: 1280px;
@@ -111,8 +117,8 @@ export default {
 .nav-icon { font-size: 13px; }
 .nav-link:hover { color: var(--carbon-100); background: var(--carbon-800); }
 .nav-link.router-link-active {
-  color: var(--gold-500);
-  background: rgba(201,168,76,0.1);
+  color: var(--gold-600);
+  background: rgba(183,166,224,0.18);
   font-weight: 600;
 }
 .nav-link.router-link-active .nav-icon { color: var(--gold-500); }
@@ -146,7 +152,7 @@ export default {
 .profile-menu:hover { border-color: var(--gold-500); }
 .profile-avatar {
   width: 26px; height: 26px;
-  background: rgba(201,168,76,0.15);
+  background: rgba(183,166,224,0.18);
   border: 1px solid var(--gold-500);
   border-radius: 50%;
   display: flex; align-items: center; justify-content: center;

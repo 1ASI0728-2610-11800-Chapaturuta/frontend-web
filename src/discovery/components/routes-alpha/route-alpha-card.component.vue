@@ -57,7 +57,7 @@ export default {
 .route-card:hover {
   border-color: var(--gold-500);
   transform: translateY(-4px);
-  box-shadow: 0 8px 32px rgba(201,168,76,0.2);
+  box-shadow: 0 8px 32px rgba(183,166,224,0.2);
 }
 
 .card-image {
@@ -77,14 +77,14 @@ export default {
   position: absolute;
   top: 10px;
   right: 10px;
-  background: rgba(0,0,0,0.7);
+  background: rgba(255,255,255,0.85);
   backdrop-filter: blur(4px);
-  border: 1px solid rgba(201,168,76,0.3);
+  border: 1px solid rgba(183,166,224,0.3);
   border-radius: var(--radius-sm);
   padding: 4px 10px;
   font-size: 11px;
   font-weight: 600;
-  color: var(--gold-400);
+  color: var(--gold-600);
   display: flex;
   align-items: center;
   gap: 4px;
@@ -121,7 +121,7 @@ export default {
   gap: 5px;
   font-size: 13px;
   font-weight: 600;
-  color: var(--gold-400);
+  color: var(--gold-600);
 }
 .stat i { font-size: 12px; color: var(--carbon-400); }
 </style>

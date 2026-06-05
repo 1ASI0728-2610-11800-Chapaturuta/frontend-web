@@ -167,7 +167,7 @@ export default {
   font-weight: 700;
   color: var(--carbon-50);
 }
-.detail-title .arrow { color: var(--gold-400); }
+.detail-title .arrow { color: var(--gold-600); }
 .detail-stops-count {
   font-size: 0.8rem;
   color: var(--carbon-400);
@@ -182,7 +182,7 @@ export default {
   gap: 6px;
   font-size: 0.95rem;
   font-weight: 600;
-  color: var(--gold-400);
+  color: var(--gold-600);
 }
 .stat i { color: var(--carbon-400); }
 .stops-list {

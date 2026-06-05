@@ -22,9 +22,9 @@ export default {
       try {
         const json = JSON.parse(localStorage.getItem('user'));
         const routeService = new RouteService();
-        this.routes = await routeService.loadRoutesByCompanyId(json.companyId);
+        this.routes = await routeService.getRoutesByDriverId(json.driverId);
       } catch (err) {
-        this.error = "No se encontraron rutas para esta empresa.";
+        this.error = "No se encontraron rutas para este conductor.";
       } finally {
         this.isLoading = false;
       }

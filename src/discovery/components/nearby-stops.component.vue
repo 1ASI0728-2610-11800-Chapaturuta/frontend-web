@@ -9,7 +9,8 @@ const stops = ref([])
 const me = ref(null)
 const loading = ref(false)
 const error = ref(null)
-const radius = ref(1500)
+// El backend interpreta el radio en KILÓMETROS (default 2.0).
+const radius = ref(1.5)
 const useRoad = ref(false)
 
 async function findNearby() {
@@ -27,7 +28,11 @@ async function findNearby() {
         longitude: s.longitude ?? s.lng,
         address: s.address, reference: s.reference
       }))
-    } catch (e) { error.value = e.message }
+    } catch (e) {
+      error.value = e?.isQuotaExceeded
+        ? `${e.message} (mejora tu plan en Suscripciones)`
+        : e.message
+    }
     finally { loading.value = false }
   }, err => { error.value = err.message; loading.value = false })
 }
@@ -42,10 +47,10 @@ const allMarkers = () => me.value ? [me.value, ...stops.value] : stops.value
       <div class="controls">
         <label>Radio:
           <select v-model.number="radius">
-            <option :value="500">500 m</option>
-            <option :value="1000">1 km</option>
-            <option :value="1500">1.5 km</option>
-            <option :value="3000">3 km</option>
+            <option :value="0.5">500 m</option>
+            <option :value="1">1 km</option>
+            <option :value="1.5">1.5 km</option>
+            <option :value="3">3 km</option>
           </select>
         </label>
         <label class="checkbox">
@@ -65,12 +70,12 @@ const allMarkers = () => me.value ? [me.value, ...stops.value] : stops.value
 <style scoped>
 .nearby { display:flex; flex-direction:column; gap:12px; background: var(--carbon-800); border:1px solid var(--carbon-700); border-radius: var(--radius-xl); padding:1.25rem; }
 .nearby-toolbar { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; }
-.nearby-toolbar h3 { color: var(--gold-400); margin:0; font-size:1.05rem; }
+.nearby-toolbar h3 { color: var(--gold-600); margin:0; font-size:1.05rem; }
 .controls { display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
 .controls label { font-size:13px; color: var(--carbon-400); display:inline-flex; align-items:center; gap:6px; }
 .controls select { background: var(--carbon-900); color: var(--carbon-50); border:1px solid var(--carbon-700); padding:4px 8px; border-radius:6px; }
 .checkbox input { accent-color: var(--gold-500); }
-.find-btn { background: var(--gold-500); color: var(--carbon-950); border:none; padding:8px 14px; border-radius:6px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:6px; }
+.find-btn { background: var(--gold-500); color: var(--ink); border:none; padding:8px 14px; border-radius:6px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:6px; }
 .find-btn:disabled { opacity:.6; cursor:default; }
 .find-btn:hover:not(:disabled) { background: var(--gold-400); }
 .error { color:#e57373; font-size:13px; }
