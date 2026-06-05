@@ -92,10 +92,6 @@ export default {
         return;
       }
       try {
-        // Obtener companyId del localStorage y setearlo en paradero
-        const user = JSON.parse(localStorage.getItem('user'));
-        this.paradero.fk_id_company = user?.companyId || '';
-
         const service = new StopService();
         const updated = await service.updateStop(this.paradero.id, this.paradero);
         this.$emit('updated', updated);
@@ -186,7 +182,8 @@ export default {
         address: this.stop.address || '',
         reference: this.stop.reference || '',
         fk_id_district: this.stop.fk_id_district || '',
-        fk_id_company: this.stop.fk_id_company || '',
+        fk_id_driver: this.stop.fk_id_driver || this.stop.fk_id_company || '',
+        fk_id_company: this.stop.fk_id_driver || this.stop.fk_id_company || '',
       };
       this.initialParadero = { ...this.paradero };
     }
@@ -255,7 +252,7 @@ export default {
         </div>
 
 <!--
-    EL FK DEL COMPANY VIENE DE LA SESION
+    EL FK DEL DRIVER VIENE DE LA SESION
 
     <div class="p-field">
           <label for="company">Empresa</label>

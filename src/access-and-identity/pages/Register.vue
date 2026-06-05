@@ -59,8 +59,8 @@
             <label>{{ t('register.selectRole') }}</label>
             <select v-model="role" @blur="touched.role = true">
               <option disabled value="">{{ t('register.selectRole') }}</option>
-              <option value="0">{{ t('register.driver') }}</option>
-              <option value="1">{{ t('register.manager') }}</option>
+              <option value="0">{{ t('register.traveller') }}</option>
+              <option value="2">{{ t('register.driver') }}</option>
             </select>
             <small v-if="touched.role && !role">{{ t('register.selectRequired') }}</small>
           </div>

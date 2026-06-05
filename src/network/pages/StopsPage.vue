@@ -3,6 +3,7 @@ import StopsHeaderTitle from "@/network/components/stops-header-title.component.
 import stopsList from "@/network/components/stops-list.component.vue";
 import MapWithMarkers from "@/shared/components/MapWithMarkers.vue";
 import { StopService } from "@/network/services/stop.service.js";
+import { getDriverId } from "@/shared/services/session.service.js";
 
 export default {
   components: {
@@ -25,8 +26,13 @@ export default {
       this.error = null;
       try {
         const service = new StopService();
-        const companyId = JSON.parse(localStorage.getItem("user")).companyId;
-        this.stops = await service.getStopsByCompanyId(companyId);
+        const driverId = getDriverId();
+        if (!driverId) {
+          this.error = 'Primero completa tu perfil de conductor para gestionar paraderos.';
+          this.stops = [];
+          return;
+        }
+        this.stops = await service.getStopsByDriverId(driverId);
       } catch (err) {
         this.error = `Error al cargar paraderos: ${err.message}`;
         this.$toast.add({ severity: 'error', summary: 'Error', detail: this.error });

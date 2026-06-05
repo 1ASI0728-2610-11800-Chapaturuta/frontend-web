@@ -89,7 +89,7 @@ import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { APP_ROUTES } from '@/shared/services/routes.js'
 import { AuthService } from '@/access-and-identity/services/auth.service.js'
-import { TransportCompanyService } from '@/transport-company/services/transport-company.service.js'
+import { DriverService } from '@/driver/services/driver.service.js'
 
 const { t, locale } = useI18n()
 
@@ -126,19 +126,19 @@ async function handleLogin() {
       return
     }
 
-    if (response.role === 1) {
-      const companyService = new TransportCompanyService()
+    if (response.role === 2) {
+      const driverService = new DriverService()
       try {
-        const companyData = await companyService.getCompanyByFkUserId(response.id)
+        const driverData = await driverService.getDriverByUserId(response.id)
         localStorage.setItem('user', JSON.stringify({
           id: response.id,
           username: response.username,
           role: response.role,
-          companyId: companyData.id
+          driverId: driverData.id
         }))
-        window.location.href = '/company/home'
+        window.location.href = '/driver/home'
       } catch {
-        window.location.href = '/company/onboarding'
+        window.location.href = '/driver/onboarding'
       }
     }
 

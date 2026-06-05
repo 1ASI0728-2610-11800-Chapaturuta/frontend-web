@@ -18,7 +18,7 @@ export default {
     <div class="header-main">
       <div>
         <h1 class="page-title">Gestión de <span class="gold">Paraderos</span></h1>
-        <p class="page-sub">Administra los puntos de parada de tu empresa</p>
+        <p class="page-sub">Administra los puntos de parada de tu servicio</p>
       </div>
       <div class="header-actions">
         <div class="stat-pill">

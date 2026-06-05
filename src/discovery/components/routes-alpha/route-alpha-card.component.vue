@@ -1,13 +1,13 @@
 <script>
 export default {
   name: "route-alpha-card",
-  props: ['route', 'companyName']
+  props: ['route', 'driverName']
 }
 </script>
 
 <template>
   <router-link
-    :to="{ name: 'route-detail', params: { id: route.id }, query: { routeData: JSON.stringify(route) } }"
+    :to="{ name: 'route-detail', params: { routeId: route.id }, query: { routeData: JSON.stringify(route) } }"
     class="card-link"
   >
     <article class="route-card">
@@ -23,9 +23,9 @@ export default {
         <h3 class="route-name">
           {{ route.stops[0]?.name }} → {{ route.stops[route.stops.length - 1]?.name }}
         </h3>
-        <p class="company-name">
-          <i class="pi pi-building"></i>
-          {{ companyName }}
+        <p class="driver-name">
+          <i class="pi pi-id-card"></i>
+          {{ driverName }}
         </p>
 
         <div class="route-stats">
@@ -102,7 +102,7 @@ export default {
   color: var(--carbon-100);
   line-height: 1.3;
 }
-.company-name {
+.driver-name {
   display: flex;
   align-items: center;
   gap: 5px;

@@ -1,11 +1,12 @@
 export class Stop {
-    constructor(id, name, googleMapsUrl, imageUrl, phone, companyId, locationId) {
+    constructor(id, name, googleMapsUrl, imageUrl, phone, driverId, locationId) {
         this.id = id;
         this.name = name;
         this.googleMapsUrl = googleMapsUrl;
         this.imageUrl = imageUrl;
         this.phone = phone;
-        this.companyId = companyId;
+        this.driverId = driverId;
+        this.companyId = driverId;
         this.locationId = locationId;
     }
 }

@@ -1,17 +1,20 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import LoginView        from '@/access-and-identity/pages/Login.vue'
 import RegisterView     from '@/access-and-identity/pages/Register.vue'
-import CompanyRegisterView from '@/transport-company/pages/CompanyRegister.vue'
 import RoutesPage       from '@/network/pages/RoutesPage.vue'
 import RouteCompleteDetailsComponent from "@/discovery/pages/route-complete-details.component.vue"
 import StopsPage        from "@/network/pages/StopsPage.vue"
-import HomePage         from "@/transport-company/pages/HomePage.vue"
-import CompanyLayout    from "@/shared/components/CompanyLayout.vue"
+import DriverOnboardingPage from '@/driver/pages/DriverOnboardingPage.vue'
+import DriverHomePage   from "@/driver/pages/DriverHomePage.vue"
+import DriverLayout     from "@/shared/components/DriverLayout.vue"
 import RoutesList       from "@/discovery/components/routes-list/routes-list.vue"
 import TravellerLayout  from "@/shared/components/TravellerLayout.vue"
 import { APP_ROUTES }   from "@/shared/services/routes.js"
-import CompanyInformation from "@/transport-company/pages/CompanyInformation.vue"
-import Suscription      from "@/shared/components/Suscription.vue"
+import DriverInformationPage from "@/driver/pages/DriverInformationPage.vue"
+import PaymentsPage from "@/payments/pages/PaymentsPage.vue"
+import SubscriptionsPage from "@/subscriptions/pages/SubscriptionsPage.vue"
+import { DriverService } from "@/driver/services/driver.service.js"
+import { getCurrentUser, getDriverId, saveCurrentUser } from "@/shared/services/session.service.js"
 
 const routes = [
     /* TRAVELLER / PUBLIC */
@@ -67,32 +70,56 @@ const routes = [
             },
         ]
     },
-    /* COMPANY */
+    /* DRIVER */
     {
-        path: "/" + APP_ROUTES.COMPANY.ROOT,
+        path: "/" + APP_ROUTES.DRIVER.ROOT,
         children: [
             {
-                path: APP_ROUTES.COMPANY.ONBOARDING,
-                component: CompanyRegisterView,
+                path: APP_ROUTES.DRIVER.ONBOARDING,
+                component: DriverOnboardingPage,
             },
             {
                 path: "",
-                component: CompanyLayout,
+                component: DriverLayout,
                 children: [
-                    { path: APP_ROUTES.COMPANY.HOME,        component: HomePage },
-                    { path: APP_ROUTES.COMPANY.STOPS,       component: StopsPage },
-                    { path: APP_ROUTES.COMPANY.ROUTES,      component: RoutesPage },
-                    { path: APP_ROUTES.COMPANY.INFORMATION, component: CompanyInformation },
-                    { path: APP_ROUTES.COMPANY.SUSCRIPTION, component: Suscription }
+                    { path: APP_ROUTES.DRIVER.HOME,          component: DriverHomePage },
+                    { path: APP_ROUTES.DRIVER.STOPS,         component: StopsPage },
+                    { path: APP_ROUTES.DRIVER.ROUTES,        component: RoutesPage },
+                    { path: APP_ROUTES.DRIVER.INFORMATION,   component: DriverInformationPage },
+                    { path: APP_ROUTES.DRIVER.PAYMENTS,      component: PaymentsPage },
+                    { path: APP_ROUTES.DRIVER.SUBSCRIPTIONS, component: SubscriptionsPage }
                 ]
             }
         ]
+    },
+    /* LEGACY COMPANY URLS */
+    {
+        path: "/company/:pathMatch(.*)*",
+        redirect: to => `/driver/${to.params.pathMatch || APP_ROUTES.DRIVER.HOME}`
     }
 ]
 
 const router = createRouter({
     history: createWebHistory(),
     routes
+})
+
+router.beforeEach(async (to) => {
+    const isDriverRoute = to.path.startsWith(`/${APP_ROUTES.DRIVER.ROOT}`)
+    const isOnboarding = to.path === `/${APP_ROUTES.DRIVER.ROOT}/${APP_ROUTES.DRIVER.ONBOARDING}`
+    if (!isDriverRoute || isOnboarding) return true
+
+    const user = getCurrentUser()
+    if (Number(user.role) !== 2) return true
+    if (getDriverId()) return true
+
+    try {
+        const driver = await new DriverService().getDriverByUserId(user.id)
+        saveCurrentUser({ ...user, driverId: driver.id })
+        return true
+    } catch {
+        return `/${APP_ROUTES.DRIVER.ROOT}/${APP_ROUTES.DRIVER.ONBOARDING}`
+    }
 })
 
 export default router

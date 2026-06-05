@@ -1,12 +1,12 @@
 <script>
-import { TransportCompanyService } from '@/transport-company/services/transport-company.service.js'
+import { DriverService } from '@/driver/services/driver.service.js'
 import RouteAlphaCard from "./route-alpha-card.component.vue";
 
 export default {
   name: "routes-alpha-list",
   components: { RouteAlphaCard },
   data() {
-    return { routesWithCompanyNames: [] }
+    return { routesWithDriverNames: [] }
   },
   props: {
     routes:    { type: Array,   required: true },
@@ -20,25 +20,27 @@ export default {
         if (newRoutes && newRoutes.length > 0) {
           await this.processRoutes(newRoutes)
         } else {
-          this.routesWithCompanyNames = []
+          this.routesWithDriverNames = []
         }
       }
     }
   },
   methods: {
     async processRoutes(routes) {
-      const svc = new TransportCompanyService()
+      const svc = new DriverService()
       const results = await Promise.all(
         routes.map(async (route) => {
           try {
-            const company = await svc.getCompanyById(route.stops[0].fk_company_id)
-            return { ...route, companyName: company.name }
+            const firstStop = route.stops?.[0] || {}
+            const driver = await svc.getById(firstStop.fkIdDriver || firstStop.fk_id_driver || firstStop.fk_company_id)
+            const driverName = `${driver.firstName || ''} ${driver.lastName || ''}`.trim()
+            return { ...route, driverName: driverName || 'Conductor' }
           } catch {
-            return { ...route, companyName: 'Empresa' }
+            return { ...route, driverName: 'Conductor' }
           }
         })
       )
-      this.routesWithCompanyNames = results
+      this.routesWithDriverNames = results
     }
   }
 }
@@ -63,12 +65,12 @@ export default {
       <p>{{ error }}</p>
     </div>
 
-    <div v-else-if="routesWithCompanyNames.length > 0" class="routes-grid">
+    <div v-else-if="routesWithDriverNames.length > 0" class="routes-grid">
       <route-alpha-card
-        v-for="(route, i) in routesWithCompanyNames"
+        v-for="(route, i) in routesWithDriverNames"
         :key="route.id"
         :route="route"
-        :companyName="route.companyName"
+        :driverName="route.driverName"
         :style="{ animationDelay: `${i * 50}ms` }"
         class="card-appear"
       />

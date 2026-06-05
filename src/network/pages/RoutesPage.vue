@@ -5,6 +5,7 @@ import Toast from 'primevue/toast' // Import explícito
 import RoutesHeaderTitle from "@/network/components/routes-header-title.component.vue"
 import RoutesList from "@/network/components/routes-list.component.vue"
 import {RouteService} from "@/network/services/route.service.js";
+import { getDriverId } from "@/shared/services/session.service.js";
 
 
 const toast = useToast()
@@ -17,15 +18,20 @@ const loadRoutes = async () => {
   isLoading.value = true
   error.value = null
   try {
-    const json = JSON.parse(localStorage.getItem('user'));
     const routeAppService = new RouteService();
-    routes.value = await routeAppService.loadRoutesByCompanyId(json.companyId);
+    const driverId = getDriverId();
+    if (!driverId) {
+      error.value = "Primero completa tu perfil de conductor para gestionar rutas.";
+      routes.value = [];
+      return;
+    }
+    routes.value = await routeAppService.loadRoutesByDriverId(driverId);
   } catch (err) {
     let message = "Error al cargar rutas";
     // Si el error es de Axios (o similar), tendrá error.response
     routes.value = []
     if (err.value) {
-      message = "No se encontraron rutas para esta empresa (404).";
+      message = "No se encontraron rutas para este conductor (404).";
     } else if (err.message) {
       if (err.message.includes('404') || err.message.includes('encontrado')) {
         return ;

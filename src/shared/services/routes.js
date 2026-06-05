@@ -17,6 +17,16 @@ export const APP_ROUTES = {
         PROFILE: 'profile',
         TRIPS: 'trips',
     },
+    DRIVER:{
+        ROOT: 'driver',
+        ONBOARDING: 'onboarding',
+        HOME: 'home',
+        STOPS: 'stops',
+        ROUTES: 'routes',
+        INFORMATION: 'information',
+        PAYMENTS: 'payments',
+        SUBSCRIPTIONS: 'subscriptions'
+    },
     COMPANY:{
         ROOT: 'company',
         ONBOARDING: 'onboarding',

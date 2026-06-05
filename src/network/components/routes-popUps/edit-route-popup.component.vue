@@ -3,6 +3,7 @@ import {onMounted, ref, watch, computed} from 'vue';
 import {StopService} from "@/network/services/stop.service.js";
 import {RouteService} from "@/network/services/route.service.js";
 import NewSchedulePopup from '../schedule-popUps/new-schedule-popup.component.vue'
+import { getDriverId } from "@/shared/services/session.service.js";
 
 // Definición de props/emits (más explícito)
 const emit = defineEmits(['update:value', 'created']);
@@ -46,10 +47,13 @@ const addRoute = async () => {
 const loadSelects = async () => {
   try {
     loading.value = true;
-    const user = JSON.parse(localStorage.getItem("user"));
-    console.log(user);
-    await stopService.getStopsForSelect(user.companyId); // revisar el company Id, deber ser int, por mientras esta con 2
-                                                                      //Recuerda crear un company en el swagger para que funcione
+    const driverId = getDriverId();
+    if (!driverId) {
+      error.value = 'Primero completa tu perfil de conductor';
+      stops_origin.value = [];
+      return;
+    }
+    stops_origin.value = await stopService.getStopsForSelect(driverId);
   } catch (err) {
     error.value = 'Error al cargar paraderos';
   } finally {

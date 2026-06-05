@@ -8,7 +8,7 @@ const emit = defineEmits(["created"])
     <div class="header-main">
       <div>
         <h1 class="page-title">Gestión de <span class="gold">Rutas</span></h1>
-        <p class="page-sub">Administra las rutas de transporte de tu empresa</p>
+        <p class="page-sub">Administra las rutas de transporte que operas</p>
       </div>
       <new-route-popup-component @created="emit('created')" />
     </div>
