@@ -19,11 +19,36 @@
         <div class="trip-icon"><i class="pi pi-directions"></i></div>
         <div class="trip-info">
           <h3>{{ trip.routeName || 'Ruta desconocida' }}</h3>
-          <p>{{ trip.origin }} → {{ trip.destination }}</p>
+          <p>{{ originLabel(trip) }} → {{ destinationLabel(trip) }}</p>
+          <p class="trip-people">
+            <span v-if="trip.driverName"><i class="pi pi-user"></i> {{ trip.driverName }}</span>
+            <span v-if="trip.passengerName"><i class="pi pi-users"></i> {{ trip.passengerName }}</span>
+          </p>
         </div>
         <div class="trip-meta">
-          <span class="trip-date">{{ formatDate(trip.date) }}</span>
+          <span class="status-badge" :class="statusClass(trip.status)">{{ statusLabel(trip.status) }}</span>
+          <span class="trip-date">{{ formatDateTime(trip.startTime || trip.date) }}</span>
           <span class="trip-price">S/ {{ trip.price }}</span>
+          <div v-if="isDriver" class="trip-actions">
+            <button
+              v-if="normalizeStatus(trip.status) === 'pending'"
+              class="act-btn act-start"
+              :disabled="acting === trip.id"
+              @click="doAction(trip, 'start')"
+            ><i class="pi pi-play"></i> Iniciar</button>
+            <button
+              v-if="normalizeStatus(trip.status) === 'inprogress'"
+              class="act-btn act-complete"
+              :disabled="acting === trip.id"
+              @click="doAction(trip, 'complete')"
+            ><i class="pi pi-check"></i> Completar</button>
+            <button
+              v-if="['pending','inprogress'].includes(normalizeStatus(trip.status))"
+              class="act-btn act-cancel"
+              :disabled="acting === trip.id"
+              @click="doAction(trip, 'cancel')"
+            ><i class="pi pi-times"></i> Cancelar</button>
+          </div>
         </div>
       </div>
     </div>
@@ -37,26 +62,81 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { useToast } from 'primevue/usetoast'
 import { TripService } from '@/trips/services/trip.service.js'
+import { getUserId, getDriverId } from '@/shared/services/session.service.js'
 
 const trips     = ref([])
 const isLoading = ref(false)
+const acting    = ref(null)
 const svc = new TripService()
+const toast = useToast()
 
-const formatDate = (dateStr) => {
-  if (!dateStr) return ''
-  return new Date(dateStr).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' })
+const currentUser = () => {
+  try { return JSON.parse(localStorage.getItem('user') || '{}') } catch { return {} }
+}
+const isDriver = computed(() => Number(currentUser().role) === 2)
+
+const originLabel = (t) => t.originName || t.origin || ''
+const destinationLabel = (t) => t.destinationName || t.destination || ''
+
+const formatDateTime = (value) => {
+  if (!value) return ''
+  return new Date(value).toLocaleString('es-PE', {
+    day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+  })
 }
 
-onMounted(async () => {
+const normalizeStatus = (s) => String(s ?? '').toLowerCase().replace(/[\s_]/g, '')
+const statusClass = (s) => ({
+  pending: 'st-pending',
+  inprogress: 'st-progress',
+  completed: 'st-completed',
+  cancelled: 'st-cancelled',
+  canceled: 'st-cancelled'
+}[normalizeStatus(s)] || 'st-pending')
+const statusLabel = (s) => ({
+  pending: 'Pendiente',
+  inprogress: 'En curso',
+  completed: 'Completado',
+  cancelled: 'Cancelado',
+  canceled: 'Cancelado'
+}[normalizeStatus(s)] || (s || 'Pendiente'))
+
+const load = async () => {
   isLoading.value = true
   try {
-    const user = JSON.parse(localStorage.getItem('user') || '{}')
-    if (user.id) trips.value = await svc.getTripsByUserId(user.id)
-  } catch { /* TODO: endpoint pendiente */ }
-  finally { isLoading.value = false }
-})
+    if (isDriver.value) {
+      const driverId = getDriverId()
+      if (driverId) trips.value = await svc.getTripHistoryByDriverId(driverId)
+    } else {
+      const userId = getUserId()
+      if (userId) trips.value = await svc.getTripHistoryByUserId(userId)
+    }
+  } catch (e) {
+    toast.add({ severity: 'error', summary: 'Error', detail: e?.data?.message || 'No se pudo cargar el historial.', life: 4000 })
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const doAction = async (trip, action) => {
+  acting.value = trip.id
+  try {
+    if (action === 'start') await svc.startTrip(trip.id)
+    else if (action === 'complete') await svc.completeTrip(trip.id)
+    else if (action === 'cancel') await svc.cancelTrip(trip.id)
+    toast.add({ severity: 'success', summary: 'Viaje actualizado', life: 2500 })
+    await load()
+  } catch (e) {
+    toast.add({ severity: 'error', summary: 'Error', detail: e?.data?.message || 'No se pudo actualizar el viaje.', life: 4000 })
+  } finally {
+    acting.value = null
+  }
+}
+
+onMounted(load)
 </script>
 
 <style scoped>
@@ -92,9 +172,32 @@ onMounted(async () => {
 .trip-info { flex: 1; }
 .trip-info h3 { font-size: 0.9rem; font-weight: 600; color: var(--carbon-100); }
 .trip-info p { font-size: 0.8rem; color: var(--carbon-400); margin-top: 2px; }
-.trip-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+.trip-people { display: flex; gap: 14px; }
+.trip-people span { display: inline-flex; align-items: center; gap: 4px; }
+.trip-people i { font-size: 0.7rem; }
+.trip-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
 .trip-date { font-size: 0.75rem; color: var(--carbon-500); }
 .trip-price { font-size: 0.9rem; font-weight: 700; color: var(--gold-400); }
+
+.status-badge {
+  font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 999px;
+  text-transform: uppercase; letter-spacing: 0.03em;
+}
+.st-pending   { background: rgba(138,138,138,0.15); color: var(--carbon-300); }
+.st-progress  { background: rgba(251,191,36,0.15);  color: var(--warning); }
+.st-completed { background: rgba(74,222,128,0.15);  color: var(--success); }
+.st-cancelled { background: rgba(248,113,113,0.15); color: var(--danger); }
+
+.trip-actions { display: flex; gap: 6px; margin-top: 4px; }
+.act-btn {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 0.72rem; font-weight: 600; padding: 4px 10px; border-radius: 6px;
+  cursor: pointer; border: 1px solid transparent;
+}
+.act-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.act-start    { background: rgba(96,165,250,0.12); color: var(--info); border-color: rgba(96,165,250,0.3); }
+.act-complete { background: rgba(74,222,128,0.12); color: var(--success); border-color: rgba(74,222,128,0.3); }
+.act-cancel   { background: rgba(248,113,113,0.12); color: var(--danger); border-color: rgba(248,113,113,0.3); }
 
 .skeleton-list { display: flex; flex-direction: column; gap: 10px; }
 .sk-row { height: 68px; background: var(--carbon-800); border-radius: var(--radius-lg); }

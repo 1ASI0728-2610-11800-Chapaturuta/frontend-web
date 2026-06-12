@@ -18,7 +18,17 @@
         <p v-if="activeSubscription">Plan #{{ activeSubscription.fkIdPlan }} · Usuario #{{ activeSubscription.fkIdUser }}</p>
         <p v-else>Activa el plan Premium para habilitar tu cuenta.</p>
       </div>
-      <span v-if="activeSubscription" class="active-pill">{{ activeSubscription.autoRenew ? 'Auto-renovable' : 'Manual' }}</span>
+      <div v-if="activeSubscription" class="active-side">
+        <span class="active-pill">{{ activeSubscription.autoRenew ? 'Auto-renovable' : 'Manual' }}</span>
+        <div class="active-actions">
+          <button class="ghost-action" type="button" :disabled="processing" @click="renew">
+            <i class="pi pi-refresh"></i> Renovar
+          </button>
+          <button class="ghost-action danger" type="button" :disabled="processing" @click="cancel">
+            <i class="pi pi-times"></i> Cancelar
+          </button>
+        </div>
+      </div>
     </section>
 
     <div v-if="loading" class="state-card">Cargando planes...</div>
@@ -73,6 +83,7 @@ const activeSubscription = ref(null)
 const loading = ref(false)
 const error = ref('')
 const subscribingId = ref(null)
+const processing = ref(false)
 
 function formatMoney(value) {
   return Number(value || 0).toFixed(2)
@@ -131,6 +142,34 @@ async function subscribe(plan) {
   }
 }
 
+async function cancel() {
+  if (!activeSubscription.value) return
+  processing.value = true
+  error.value = ''
+  try {
+    await subscriptionService.cancel(activeSubscription.value.id)
+    await load()
+  } catch (err) {
+    error.value = err?.data?.message || err?.message || 'No se pudo cancelar la suscripcion'
+  } finally {
+    processing.value = false
+  }
+}
+
+async function renew() {
+  if (!activeSubscription.value) return
+  processing.value = true
+  error.value = ''
+  try {
+    await subscriptionService.renew(activeSubscription.value.id)
+    await load()
+  } catch (err) {
+    error.value = err?.data?.message || err?.message || 'No se pudo renovar la suscripcion'
+  } finally {
+    processing.value = false
+  }
+}
+
 onMounted(load)
 </script>
 
@@ -163,6 +202,17 @@ onMounted(load)
 .active-card h2 { color: var(--carbon-100); margin-top: 4px; }
 .active-card p { color: var(--carbon-400); font-size: 0.875rem; }
 .active-pill { height: fit-content; padding: 5px 10px; border-radius: 999px; background: rgba(74,222,128,0.12); color: var(--success); font-size: 12px; font-weight: 700; }
+.active-side { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
+.active-actions { display: flex; gap: 8px; }
+.ghost-action {
+  display: inline-flex; align-items: center; gap: 6px;
+  border: 1px solid var(--carbon-600); background: transparent; color: var(--carbon-200);
+  border-radius: var(--radius-md); padding: 7px 12px; cursor: pointer; font-weight: 600;
+  font-family: var(--font-family); font-size: 0.8rem;
+}
+.ghost-action:hover:not(:disabled) { border-color: var(--gold-500); color: var(--gold-400); }
+.ghost-action:disabled { opacity: 0.5; cursor: not-allowed; }
+.ghost-action.danger { color: var(--danger); border-color: rgba(248,113,113,0.4); }
 .state-card { min-height: 140px; background: var(--carbon-800); border: 1px solid var(--carbon-700); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; color: var(--carbon-400); }
 .state-card.error { color: var(--danger); border-color: rgba(248,113,113,0.3); }
 .plans-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }

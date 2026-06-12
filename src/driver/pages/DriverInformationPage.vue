@@ -16,6 +16,31 @@
       <div v-else-if="loadError" class="error-box">{{ loadError }}</div>
       <template v-else>
         <div class="section-title">Datos personales</div>
+
+        <div class="photo-block">
+          <div class="photo-preview">
+            <img v-if="photoPreview || driver.photoUrl" :src="photoPreview || driver.photoUrl" alt="Foto conductor" />
+            <i v-else class="pi pi-user"></i>
+          </div>
+          <div class="photo-controls">
+            <input ref="fileInput" type="file" accept="image/*" class="hidden-file" @change="onFileSelected" />
+            <button class="btn-photo" type="button" @click="fileInput?.click()">
+              <i class="pi pi-image"></i> Elegir foto
+            </button>
+            <button
+              v-if="photoFile"
+              class="btn-photo upload"
+              type="button"
+              :disabled="uploadingPhoto"
+              @click="uploadPhoto"
+            >
+              <span v-if="uploadingPhoto" class="spinner"></span>
+              {{ uploadingPhoto ? 'Subiendo...' : 'Subir a Cloudinary' }}
+            </button>
+            <p class="photo-hint">JPG/PNG, máx 5 MB</p>
+          </div>
+        </div>
+
         <div class="grid two">
           <label class="field"><span>Nombres</span><input v-model.trim="driver.firstName" /></label>
           <label class="field"><span>Apellidos</span><input v-model.trim="driver.lastName" /></label>
@@ -77,6 +102,43 @@ const saving = ref(false)
 const loadError = ref('')
 const errors = ref([])
 const success = ref(false)
+
+const fileInput = ref(null)
+const photoFile = ref(null)
+const photoPreview = ref('')
+const uploadingPhoto = ref(false)
+
+function onFileSelected(e) {
+  const file = e.target.files?.[0]
+  if (!file) return
+  if (!file.type.startsWith('image/')) {
+    errors.value = ['El archivo debe ser una imagen']
+    return
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    errors.value = ['La imagen no debe superar 5 MB']
+    return
+  }
+  errors.value = []
+  photoFile.value = file
+  photoPreview.value = URL.createObjectURL(file)
+}
+
+async function uploadPhoto() {
+  if (!photoFile.value || !driver.id) return
+  uploadingPhoto.value = true
+  try {
+    const updated = await service.uploadPhoto(driver.id, photoFile.value)
+    if (updated?.photoUrl) driver.photoUrl = updated.photoUrl
+    photoFile.value = null
+    success.value = true
+    setTimeout(() => { success.value = false }, 3000)
+  } catch (err) {
+    errors.value = [err?.data?.message || err?.message || 'No se pudo subir la foto']
+  } finally {
+    uploadingPhoto.value = false
+  }
+}
 
 async function resolveDriver() {
   const user = getCurrentUser()
@@ -159,6 +221,23 @@ onMounted(load)
 .field input, .field select { width: 100%; padding: 10px 12px; border-radius: var(--radius-md); border: 1px solid var(--carbon-600); background: var(--carbon-900); color: var(--carbon-100); font-family: var(--font-family); }
 .field input:disabled, .field select:disabled { opacity: 0.7; cursor: not-allowed; }
 .field input:focus, .field select:focus { outline: none; border-color: var(--gold-500); }
+.photo-block { display: flex; align-items: center; gap: 1.25rem; }
+.photo-preview {
+  width: 88px; height: 88px; border-radius: 50%; overflow: hidden; flex-shrink: 0;
+  background: var(--carbon-900); border: 1px solid var(--carbon-600);
+  display: flex; align-items: center; justify-content: center; color: var(--carbon-500); font-size: 28px;
+}
+.photo-preview img { width: 100%; height: 100%; object-fit: cover; }
+.photo-controls { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+.hidden-file { display: none; }
+.btn-photo {
+  display: inline-flex; align-items: center; gap: 6px;
+  border: 1px solid var(--carbon-600); background: var(--carbon-900); color: var(--carbon-200);
+  border-radius: var(--radius-md); padding: 8px 14px; cursor: pointer; font-family: var(--font-family);
+}
+.btn-photo.upload { border-color: rgba(201,168,76,0.4); background: rgba(201,168,76,0.1); color: var(--gold-400); }
+.btn-photo:disabled { opacity: 0.6; cursor: not-allowed; }
+.photo-hint { font-size: 11px; color: var(--carbon-500); }
 .state { color: var(--carbon-400); }
 .error-box, .success-box { border-radius: var(--radius-md); padding: 0.75rem 1rem; font-size: 13px; }
 .error-box { background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.3); color: var(--danger); }

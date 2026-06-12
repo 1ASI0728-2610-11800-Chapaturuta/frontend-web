@@ -34,20 +34,218 @@
           <div><span>Confirmado</span><strong>{{ payment.confirmedAt ? formatDate(payment.confirmedAt) : 'Pendiente' }}</strong></div>
           <div><span>Referencia</span><strong>{{ payment.externalReference || '-' }}</strong></div>
         </div>
+        <div class="card-actions">
+          <button
+            v-if="isPending(payment.status)"
+            class="pay-action"
+            type="button"
+            @click="openPay(payment)"
+          >
+            <i class="pi pi-credit-card"></i> Pagar con tarjeta
+          </button>
+          <button
+            v-if="isPending(payment.status)"
+            class="ghost-action danger"
+            type="button"
+            :disabled="actingId === payment.id"
+            @click="markFailed(payment)"
+          >
+            <i class="pi pi-times-circle"></i> Marcar fallido
+          </button>
+          <button
+            v-if="isCompleted(payment.status)"
+            class="ghost-action"
+            type="button"
+            :disabled="actingId === payment.id"
+            @click="openRefund(payment)"
+          >
+            <i class="pi pi-replay"></i> Reembolsar
+          </button>
+          <button
+            class="ghost-action"
+            type="button"
+            :disabled="actingId === payment.id"
+            @click="toggleRefunds(payment)"
+          >
+            <i class="pi pi-list"></i> {{ expandedId === payment.id ? 'Ocultar' : 'Ver' }} reembolsos
+          </button>
+        </div>
+
+        <div v-if="expandedId === payment.id" class="refunds-box">
+          <p v-if="(refundsByPayment[payment.id] || []).length === 0" class="refunds-empty">
+            Sin reembolsos para este pago.
+          </p>
+          <div
+            v-for="refund in refundsByPayment[payment.id] || []"
+            :key="refund.id"
+            class="refund-row"
+          >
+            <div>
+              <strong>Reembolso #{{ refund.id }}</strong>
+              <span>{{ payment.currency }} {{ formatMoney(refund.amount) }} · {{ refund.status }}</span>
+            </div>
+            <button
+              v-if="isPending(refund.status)"
+              class="ghost-action sm"
+              type="button"
+              :disabled="actingId === payment.id"
+              @click="confirmRefund(payment, refund)"
+            >
+              Confirmar
+            </button>
+          </div>
+        </div>
       </article>
     </div>
+
+    <pb-Dialog
+      v-model:visible="showPay"
+      modal
+      header="Pago con tarjeta (PayU)"
+      :style="{ width: '28rem' }"
+    >
+      <PayuCardForm
+        v-if="selectedPayment"
+        :payment-id="selectedPayment.id"
+        :amount="selectedPayment.amount"
+        @paid="onPaid"
+        @error="() => {}"
+      />
+    </pb-Dialog>
+
+    <pb-Dialog
+      v-model:visible="showRefund"
+      modal
+      header="Solicitar reembolso"
+      :style="{ width: '26rem' }"
+    >
+      <div v-if="selectedPayment" class="refund-form">
+        <label class="refund-label">Monto</label>
+        <input v-model="refundAmount" type="number" min="0" step="0.01" class="refund-input" />
+        <label class="refund-label">Motivo</label>
+        <input v-model="refundReason" type="text" class="refund-input" placeholder="Motivo del reembolso" />
+      </div>
+      <template #footer>
+        <pb-Button label="Cancelar" text @click="showRefund = false" />
+        <pb-Button
+          label="Reembolsar"
+          icon="pi pi-check"
+          :loading="actingId === selectedPayment?.id"
+          @click="submitRefund"
+        />
+      </template>
+    </pb-Dialog>
   </div>
 </template>
 
 <script setup>
 import { onMounted, ref } from 'vue'
-import { PaymentService } from '@/payments/services/payment.service.js'
+import { useToast } from 'primevue/usetoast'
+import { PaymentService, RefundService } from '@/payments/services/payment.service.js'
+import PayuCardForm from '@/payments/components/payu-card-form.component.vue'
 import { getUserId } from '@/shared/services/session.service.js'
 
 const service = new PaymentService()
+const refundService = new RefundService()
 const payments = ref([])
 const loading = ref(false)
 const error = ref('')
+const toast = useToast()
+
+const showPay = ref(false)
+const selectedPayment = ref(null)
+
+const actingId = ref(null)
+const expandedId = ref(null)
+const refundsByPayment = ref({})
+const showRefund = ref(false)
+const refundAmount = ref(0)
+const refundReason = ref('')
+
+function isPending(status) {
+  return String(status || '').toLowerCase() === 'pending'
+}
+function isCompleted(status) {
+  return String(status || '').toLowerCase() === 'completed'
+}
+function openPay(payment) {
+  selectedPayment.value = payment
+  showPay.value = true
+}
+
+async function markFailed(payment) {
+  actingId.value = payment.id
+  try {
+    await service.failPayment(payment.id)
+    toast.add({ severity: 'success', summary: 'Pago marcado como fallido', life: 3000 })
+    await load()
+  } catch (err) {
+    toast.add({ severity: 'error', summary: 'Error', detail: err?.data?.message || err?.message || 'No se pudo actualizar el pago', life: 4000 })
+  } finally {
+    actingId.value = null
+  }
+}
+
+function openRefund(payment) {
+  selectedPayment.value = payment
+  refundAmount.value = payment.amount
+  refundReason.value = ''
+  showRefund.value = true
+}
+
+async function submitRefund() {
+  const payment = selectedPayment.value
+  if (!payment) return
+  actingId.value = payment.id
+  try {
+    await service.createRefund(payment.id, { amount: refundAmount.value, reason: refundReason.value })
+    toast.add({ severity: 'success', summary: 'Reembolso solicitado', life: 3000 })
+    showRefund.value = false
+    await loadRefunds(payment, true)
+    await load()
+  } catch (err) {
+    toast.add({ severity: 'error', summary: 'Error', detail: err?.data?.message || err?.message || 'No se pudo crear el reembolso', life: 4000 })
+  } finally {
+    actingId.value = null
+  }
+}
+
+async function loadRefunds(payment, force = false) {
+  if (!force && refundsByPayment.value[payment.id]) return
+  try {
+    refundsByPayment.value = { ...refundsByPayment.value, [payment.id]: await service.getRefunds(payment.id) }
+  } catch {
+    refundsByPayment.value = { ...refundsByPayment.value, [payment.id]: [] }
+  }
+}
+
+async function toggleRefunds(payment) {
+  if (expandedId.value === payment.id) {
+    expandedId.value = null
+    return
+  }
+  await loadRefunds(payment)
+  expandedId.value = payment.id
+}
+
+async function confirmRefund(payment, refund) {
+  actingId.value = payment.id
+  try {
+    await refundService.confirm(refund.id)
+    toast.add({ severity: 'success', summary: 'Reembolso confirmado', life: 3000 })
+    await loadRefunds(payment, true)
+    await load()
+  } catch (err) {
+    toast.add({ severity: 'error', summary: 'Error', detail: err?.data?.message || err?.message || 'No se pudo confirmar el reembolso', life: 4000 })
+  } finally {
+    actingId.value = null
+  }
+}
+async function onPaid() {
+  showPay.value = false
+  toast.add({ severity: 'success', summary: 'Pago enviado', detail: 'Procesando confirmación de PayU…', life: 3500 })
+  await load()
+}
 
 function formatMoney(value) {
   return Number(value || 0).toFixed(2)
@@ -130,6 +328,36 @@ onMounted(load)
 .status.pending { background: rgba(251,191,36,0.12); color: var(--warning); }
 .status.failed { background: rgba(248,113,113,0.12); color: var(--danger); }
 .amount { color: var(--gold-400); font-size: 1.75rem; font-weight: 700; }
+.pay-action {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  border: 1px solid rgba(201,168,76,0.4); background: rgba(201,168,76,0.1); color: var(--gold-400);
+  border-radius: var(--radius-md); padding: 10px; cursor: pointer; font-weight: 600;
+  font-family: var(--font-family);
+}
+.pay-action:hover { background: rgba(201,168,76,0.2); }
+.card-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.ghost-action {
+  display: inline-flex; align-items: center; gap: 6px;
+  border: 1px solid var(--carbon-600); background: transparent; color: var(--carbon-200);
+  border-radius: var(--radius-md); padding: 8px 12px; cursor: pointer; font-weight: 600;
+  font-family: var(--font-family); font-size: 0.8rem;
+}
+.ghost-action:hover:not(:disabled) { border-color: var(--gold-500); color: var(--gold-400); }
+.ghost-action:disabled { opacity: 0.5; cursor: not-allowed; }
+.ghost-action.danger { color: var(--danger); border-color: rgba(248,113,113,0.4); }
+.ghost-action.sm { padding: 4px 10px; font-size: 0.75rem; }
+.refunds-box { display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--carbon-700); padding-top: 0.75rem; }
+.refunds-empty { color: var(--carbon-500); font-size: 0.8rem; }
+.refund-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.refund-row strong { color: var(--carbon-100); font-size: 0.85rem; display: block; }
+.refund-row span { color: var(--carbon-400); font-size: 0.78rem; }
+.refund-form { display: flex; flex-direction: column; gap: 6px; }
+.refund-label { font-size: 0.8rem; color: var(--carbon-400); }
+.refund-input {
+  padding: 10px 12px; background: var(--carbon-800); border: 1px solid var(--carbon-700);
+  border-radius: 8px; color: var(--carbon-100); font-size: 0.9rem;
+}
+.refund-input:focus { outline: none; border-color: var(--gold-500); }
 .meta-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; border-top: 1px solid var(--carbon-700); padding-top: 1rem; }
 .meta-grid div { display: flex; flex-direction: column; gap: 2px; }
 .meta-grid span { color: var(--carbon-500); font-size: 11px; text-transform: uppercase; }

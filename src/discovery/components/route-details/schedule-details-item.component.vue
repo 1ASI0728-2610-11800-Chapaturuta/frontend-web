@@ -1,6 +1,4 @@
 <script>
-/*import { Schedule } from "../../models/schedule.entity.js";*/
-
 export default {
   name: "schedule-detail-item",
   props: {
@@ -10,51 +8,37 @@ export default {
     }
   },
   computed: {
-    groupedSchedules() {
-      const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-      const result = {};
-
-      days.forEach(day => {
-        const daySchedules = this.schedules.filter(s => s.day === day);
-        if (daySchedules.length > 0) {
-          result[day] = daySchedules;
-        } else {
-          // Default schedule if none exists
-          result[day] = [{
-            timeFrom: '12:00pm',
-            timeTo: '5:00pm',
-            isAvailable: true
-          }];
-        }
-      });
-
-      return result;
-    }
-  },
-  methods: {
-    isAvailable(schedule) {
-      return schedule.isAvailable;
+    // Backend returns { dayOfWeek, startTime, endTime, enabled }. Group enabled
+    // schedules by day, ordered Mon-Sun. Accent-insensitive day matching.
+    orderedDays() {
+      const order = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+      const norm = (v) => String(v ?? '')
+        .normalize('NFD').replace(/[̀-ͯ]/g, '')
+        .trim().toLowerCase();
+      return order
+        .map(day => ({
+          day,
+          slots: this.schedules.filter(s => s.enabled !== false && norm(s.dayOfWeek) === norm(day))
+        }))
+        .filter(entry => entry.slots.length > 0);
+    },
+    hasSchedules() {
+      return this.orderedDays.length > 0;
     }
   }
 }
 </script>
 
 <template>
-  <div class="schedule-container">
+  <div v-if="hasSchedules" class="schedule-container">
     <h2 class="schedule-title">Horarios de atención</h2>
-
     <div class="schedule-table">
-      <div v-for="(schedules, day) in groupedSchedules" :key="day" class="schedule-row">
-        <div class="day-name">{{ day }}</div>
+      <div v-for="entry in orderedDays" :key="entry.day" class="schedule-row">
+        <div class="day-name">{{ entry.day }}</div>
         <div class="schedule-times">
-          <template v-for="(schedule, index) in schedules" :key="index">
-            <div
-                class="time-slot"
-                :class="{ 'unavailable': !isAvailable(schedule) }"
-            >
-              {{ schedule.timeFrom }} - {{ schedule.timeTo }}
-            </div>
-          </template>
+          <div v-for="(slot, index) in entry.slots" :key="index" class="time-slot">
+            {{ slot.startTime }} - {{ slot.endTime }}
+          </div>
         </div>
       </div>
     </div>
@@ -63,53 +47,34 @@ export default {
 
 <style scoped>
 .schedule-container {
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  padding: 20px;
-  margin-bottom: 20px;
+  background: var(--carbon-800);
+  border: 1px solid var(--carbon-700);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
 }
-
 .schedule-title {
-  font-size: 20px;
-  font-weight: bold;
-  margin-bottom: 15px;
-  color: #37123C;
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin-bottom: 12px;
+  color: var(--carbon-50);
 }
-
-.schedule-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
+.schedule-table { display: flex; flex-direction: column; }
 .schedule-row {
   display: flex;
-  border-bottom: 1px solid #eee;
+  gap: 16px;
+  border-bottom: 1px solid var(--carbon-700);
   padding: 10px 0;
 }
-
-.schedule-row:last-child {
-  border-bottom: none;
-}
-
-.day-name {
-  width: 120px;
-  font-weight: 500;
-}
-
-.schedule-times {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
+.schedule-row:last-child { border-bottom: none; }
+.day-name { width: 110px; font-weight: 600; color: var(--carbon-200); font-size: 0.9rem; }
+.schedule-times { flex: 1; display: flex; flex-wrap: wrap; gap: 8px; }
 .time-slot {
-  padding: 2px 0;
-}
-
-.time-slot.unavailable {
-  color: #999;
-  text-decoration: line-through;
+  padding: 3px 10px;
+  background: rgba(201,168,76,0.1);
+  border: 1px solid rgba(201,168,76,0.3);
+  border-radius: 999px;
+  color: var(--gold-400);
+  font-size: 0.82rem;
+  font-weight: 600;
 }
 </style>

@@ -16,6 +16,8 @@ export default {
       </transition>
     </div>
   </main>
+
+  <pb-Toast />
 </template>
 
 <style scoped>

@@ -16,6 +16,7 @@ export const APP_ROUTES = {
         COLLECTION: 'collection/:collectionId',
         PROFILE: 'profile',
         TRIPS: 'trips',
+        RESERVATIONS: 'reservations',
     },
     DRIVER:{
         ROOT: 'driver',
@@ -26,15 +27,5 @@ export const APP_ROUTES = {
         INFORMATION: 'information',
         PAYMENTS: 'payments',
         SUBSCRIPTIONS: 'subscriptions'
-    },
-    COMPANY:{
-        ROOT: 'company',
-        ONBOARDING: 'onboarding',
-        HOME: 'home',
-        STOPS: 'stops',
-        ROUTES: 'routes',
-        PROFILE: 'profile',
-        INFORMATION: 'information',
-        SUSCRIPTION: 'suscription'
     }
 }

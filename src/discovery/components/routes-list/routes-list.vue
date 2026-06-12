@@ -22,7 +22,7 @@ export default {
       try {
         const json = JSON.parse(localStorage.getItem('user'));
         const routeService = new RouteService();
-        this.routes = await routeService.loadRoutesByDriverId(json.driverId || json.companyId);
+        this.routes = await routeService.loadRoutesByDriverId(json.driverId);
       } catch (err) {
         this.error = "No se encontraron rutas para este conductor.";
       } finally {

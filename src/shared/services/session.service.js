@@ -12,7 +12,7 @@ export function saveCurrentUser(user) {
 
 export function getDriverId() {
   const user = getCurrentUser()
-  return Number(user.driverId ?? user.companyId) || null
+  return Number(user.driverId) || null
 }
 
 export function getUserId() {

@@ -6,7 +6,6 @@ export class Stop {
         this.imageUrl = imageUrl;
         this.phone = phone;
         this.driverId = driverId;
-        this.companyId = driverId;
         this.locationId = locationId;
     }
 }

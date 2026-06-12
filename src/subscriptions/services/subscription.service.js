@@ -35,4 +35,14 @@ export class SubscriptionService extends BaseService {
     })
     return response.data
   }
+
+  async cancel(subscriptionId) {
+    const response = await this.http.post(`${this.resourcePath()}/${subscriptionId}/cancel`)
+    return response.data
+  }
+
+  async renew(subscriptionId) {
+    const response = await this.http.post(`${this.resourcePath()}/${subscriptionId}/renew`)
+    return response.data
+  }
 }

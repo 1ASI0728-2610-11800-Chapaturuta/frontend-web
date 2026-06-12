@@ -48,10 +48,6 @@ export class StopService extends BaseService {
     }
   }
 
-  async getStopsByCompanyId(companyId) {
-    return this.getStopsByDriverId(companyId)
-  }
-
   async getStopsForSelect(driverId) {
     try {
       if (!driverId) throw new Error('ID de conductor invalido')

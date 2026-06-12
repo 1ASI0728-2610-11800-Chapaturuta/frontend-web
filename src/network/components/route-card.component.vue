@@ -1,13 +1,32 @@
 <script>
 import DeleteRoutePopUp from "@/network/components/routes-popUps/delete-route-popup.component.vue";
 import RouteMapDialog from "@/network/components/route-map-dialog.component.vue";
+import { RouteService } from "@/network/services/route.service.js";
 
 export default {
   name: 'RutaCard',
   props: { route: { type: Object, required: true } },
   components: { DeleteRoutePopUp, RouteMapDialog },
   emits: ['updated', 'deleted'],
-  data() { return { mapOpen: false } }
+  data() { return { mapOpen: false, toggling: false, routeService: new RouteService() } },
+  computed: {
+    isAvailable() { return this.route?.isActive ?? this.route?.available ?? false }
+  },
+  methods: {
+    async toggleAvailability() {
+      this.toggling = true;
+      try {
+        await this.routeService.toggleAvailability(this.route.id);
+        this.$toast?.add({ severity: 'success', summary: 'Disponibilidad actualizada', life: 2500 });
+        this.$emit('updated');
+      } catch (err) {
+        const detail = err?.data?.message || err?.message || 'No se pudo actualizar la disponibilidad.';
+        this.$toast?.add({ severity: 'error', summary: 'Error', detail, life: 4000 });
+      } finally {
+        this.toggling = false;
+      }
+    }
+  }
 }
 </script>
 
@@ -73,6 +92,14 @@ export default {
 
     <div class="route-actions">
       <pb-Button label="Ver mapa" icon="pi pi-map" class="map-btn" severity="secondary" @click="mapOpen = true" />
+      <pb-Button
+        :label="isAvailable ? 'Disponible' : 'No disponible'"
+        :icon="isAvailable ? 'pi pi-check-circle' : 'pi pi-ban'"
+        :severity="isAvailable ? 'success' : 'secondary'"
+        :loading="toggling"
+        outlined
+        @click="toggleAvailability"
+      />
       <delete-route-pop-up
         :route-id="route.id"
         @deleted="$emit('deleted', $event)"
@@ -161,5 +188,5 @@ export default {
 .stat-label { display: block; font-size: 10px; color: var(--carbon-500); }
 .stat-val { display: block; font-size: 0.9rem; font-weight: 700; color: var(--carbon-100); }
 
-.route-actions { flex-shrink: 0; }
+.route-actions { flex-shrink: 0; display: flex; flex-direction: column; gap: 8px; align-items: stretch; }
 </style>

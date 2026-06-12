@@ -4,6 +4,8 @@ import { LMap, LTileLayer, LMarker } from '@vue-leaflet/vue-leaflet'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import { getMapConfig } from '@/shared/services/map-config.service.js'
+import { reverseGeocode, buildAddress } from '@/shared/services/reverse-geocode.service.js'
+import { useToast } from 'primevue/usetoast'
 
 // Fix default icon path (Vite + Leaflet)
 import iconUrl from 'leaflet/dist/images/marker-icon.png'
@@ -16,7 +18,8 @@ const props = defineProps({
   modelValue: { type: Object, default: null }, // {lat, lng}
   height: { type: String, default: '320px' }
 })
-const emit = defineEmits(['update:modelValue'])
+const emit = defineEmits(['update:modelValue', 'address'])
+const toast = useToast()
 
 const config = ref(null)
 const center = ref(null)
@@ -48,16 +51,42 @@ function onMarkerDrag(e) {
   emit('update:modelValue', { lat, lng })
 }
 
+const locating = ref(false)
+
+async function emitAddress(lat, lng) {
+  const data = await reverseGeocode(lat, lng)
+  const address = buildAddress(data?.address)
+  if (address) emit('address', address)
+}
+
 function useMyLocation() {
-  if (!navigator.geolocation) return
-  navigator.geolocation.getCurrentPosition(p => {
-    const lat = +p.coords.latitude.toFixed(6)
-    const lng = +p.coords.longitude.toFixed(6)
-    marker.value = [lat, lng]
-    center.value = [lat, lng]
-    zoom.value = 16
-    emit('update:modelValue', { lat, lng })
-  })
+  if (!navigator.geolocation) {
+    toast?.add({ severity: 'warn', summary: 'No disponible', detail: 'Tu navegador no soporta geolocalización.', life: 4000 })
+    return
+  }
+  locating.value = true
+  navigator.geolocation.getCurrentPosition(
+    p => {
+      const lat = +p.coords.latitude.toFixed(6)
+      const lng = +p.coords.longitude.toFixed(6)
+      marker.value = [lat, lng]
+      center.value = [lat, lng]
+      zoom.value = 16
+      emit('update:modelValue', { lat, lng })
+      emitAddress(lat, lng)
+      locating.value = false
+    },
+    err => {
+      locating.value = false
+      const detail = err.code === err.PERMISSION_DENIED
+        ? 'Permiso de ubicación denegado. Habilítalo en el navegador.'
+        : err.code === err.TIMEOUT
+          ? 'Tiempo de espera agotado al obtener ubicación.'
+          : 'No se pudo obtener tu ubicación.'
+      toast?.add({ severity: 'error', summary: 'Ubicación', detail, life: 4000 })
+    },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+  )
 }
 
 const coordsLabel = computed(() =>
@@ -69,8 +98,8 @@ const coordsLabel = computed(() =>
   <div class="map-picker">
     <div class="map-picker-toolbar">
       <span class="coords">{{ coordsLabel }}</span>
-      <button type="button" class="loc-btn" @click="useMyLocation">
-        <i class="pi pi-compass"></i> Mi ubicación
+      <button type="button" class="loc-btn" :disabled="locating" @click="useMyLocation">
+        <i class="pi" :class="locating ? 'pi-spin pi-spinner' : 'pi-compass'"></i> Mi ubicación
       </button>
     </div>
     <div class="map-wrap" :style="{ height }">

@@ -56,4 +56,14 @@ export class DriverService extends BaseService {
     const response = await this.http.patch(`${this.resourcePath()}/${driverId}/availability`)
     return response.data
   }
+
+  async uploadPhoto(driverId, file) {
+    const formData = new FormData()
+    // ASP.NET enlaza el campo al parámetro `IFormFile file` (case-insensitive)
+    formData.append('File', file)
+    const response = await this.http.post(`${this.resourcePath()}/${driverId}/photo`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+    return response.data
+  }
 }

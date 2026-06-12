@@ -50,10 +50,6 @@ export class RouteService extends BaseService {
     }
   }
 
-  async loadRoutesByCompanyId(companyId) {
-    return this.loadRoutesByDriverId(companyId)
-  }
-
   async getByRouteId(routeId) {
     try {
       const response = await this.http.get(`${this.resourcePath()}/${routeId}`)
@@ -67,6 +63,26 @@ export class RouteService extends BaseService {
     try {
       const response = await this.http.get(`${this.resourcePath()}/${routeId}/geometry`)
       return decodeGeometry(response.data?.geometry ?? response.data)
+    } catch (error) {
+      throw this._enhanceError(error)
+    }
+  }
+
+  async getEta(routeId, { lat, lng } = {}) {
+    try {
+      const response = await this.http.get(`${this.resourcePath()}/${routeId}/eta`, {
+        params: { lat, lng }
+      })
+      return response.data
+    } catch (error) {
+      throw this._enhanceError(error)
+    }
+  }
+
+  async toggleAvailability(routeId) {
+    try {
+      const response = await this.http.patch(`${this.resourcePath()}/${routeId}/toggle-availability`)
+      return response.data
     } catch (error) {
       throw this._enhanceError(error)
     }

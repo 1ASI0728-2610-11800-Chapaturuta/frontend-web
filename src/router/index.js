@@ -48,6 +48,11 @@ const routes = [
                 component: () => import('@/trips/pages/TripsHistoryPage.vue')
             },
             {
+                path: `${APP_ROUTES.TRAVELLER.ROOT}/${APP_ROUTES.TRAVELLER.RESERVATIONS}`,
+                name: "Reservations",
+                component: () => import('@/reservations/pages/ReservationsPage.vue')
+            },
+            {
                 path: `${APP_ROUTES.TRAVELLER.ROOT}/${APP_ROUTES.TRAVELLER.PROFILE}`,
                 name: "TravellerProfile",
                 component: () => import('@/traveller/pages/TravellerProfilePage.vue')
@@ -91,11 +96,6 @@ const routes = [
                 ]
             }
         ]
-    },
-    /* LEGACY COMPANY URLS */
-    {
-        path: "/company/:pathMatch(.*)*",
-        redirect: to => `/driver/${to.params.pathMatch || APP_ROUTES.DRIVER.HOME}`
     }
 ]
 
