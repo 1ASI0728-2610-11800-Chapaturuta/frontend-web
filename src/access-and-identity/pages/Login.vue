@@ -113,33 +113,39 @@ async function handleLogin() {
     const authService = new AuthService()
     const response = await authService.login({ email: email.value, password: password.value })
 
+    // El backend devuelve role como string ("Traveller"/"Driver"/"Admin").
+    // Normalizamos a numero (0/2/3) para que coincida con el resto del front,
+    // que compara role numericamente (SubscriptionsPage, TripsHistory, etc.).
+    const roleMap = { Traveller: 0, Driver: 2, Admin: 3 }
+    const roleNum = typeof response.role === 'number'
+      ? response.role
+      : (roleMap[response.role] ?? 0)
+
     // Store with the key BaseService expects
     localStorage.setItem('authToken', response.token)
     localStorage.setItem('user', JSON.stringify({
       id: response.id,
       username: response.username,
-      role: response.role
+      role: roleNum
     }))
 
-    if (response.role === 0) {
-      window.location.href = '/'
-      return
-    }
-
-    if (response.role === 2) {
+    if (roleNum === 2) {
       const driverService = new DriverService()
       try {
         const driverData = await driverService.getDriverByUserId(response.id)
         localStorage.setItem('user', JSON.stringify({
           id: response.id,
           username: response.username,
-          role: response.role,
+          role: roleNum,
           driverId: driverData.id
         }))
         window.location.href = '/driver/home'
       } catch {
         window.location.href = '/driver/onboarding'
       }
+    } else {
+      // Traveller (0) / Admin (3)
+      window.location.href = '/'
     }
 
   } catch (err) {
