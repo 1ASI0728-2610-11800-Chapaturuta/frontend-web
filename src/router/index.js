@@ -63,6 +63,11 @@ const routes = [
                 path: `${APP_ROUTES.TRAVELLER.ROOT}/${APP_ROUTES.TRAVELLER.PROFILE}`,
                 name: "TravellerProfile",
                 component: () => import('@/traveller/pages/TravellerProfilePage.vue')
+            },
+            {
+                path: `${APP_ROUTES.TRAVELLER.ROOT}/${APP_ROUTES.TRAVELLER.ASSISTANT}`,
+                name: "TravelAssistant",
+                component: () => import('@/traveller/pages/TravelAssistantPage.vue')
             }
         ]
     },

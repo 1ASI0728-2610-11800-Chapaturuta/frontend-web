@@ -18,6 +18,7 @@ export const APP_ROUTES = {
         PROFILE: 'profile',
         TRIPS: 'trips',
         RESERVATIONS: 'reservations',
+        ASSISTANT: 'asistente',
     },
     DRIVER:{
         ROOT: 'driver',

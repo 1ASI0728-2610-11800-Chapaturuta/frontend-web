@@ -10,6 +10,9 @@
         <router-link to="/" class="nav-link">
           <i class="pi pi-compass nav-icon"></i>Descubrir
         </router-link>
+        <router-link :to="`/${APP_ROUTES.TRAVELLER.ROOT}/${APP_ROUTES.TRAVELLER.ASSISTANT}`" class="nav-link">
+          <i class="pi pi-sparkles nav-icon"></i>Asistente IA
+        </router-link>
         <router-link :to="`/${APP_ROUTES.TRAVELLER.ROOT}/${APP_ROUTES.TRAVELLER.COLLECTIONS}`" class="nav-link">
           <i class="pi pi-bookmark nav-icon"></i>Colecciones
         </router-link>
