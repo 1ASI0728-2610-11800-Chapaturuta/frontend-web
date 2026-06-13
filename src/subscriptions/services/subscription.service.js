@@ -26,6 +26,12 @@ export class SubscriptionService extends BaseService {
     return response.data
   }
 
+  // Devuelve { isPremium } true solo si el usuario tiene Premium activo y no vencido.
+  async getPremiumStatus(userId) {
+    const response = await this.http.get(`${this.resourcePath()}/active/premium-status/by-user/${userId}`)
+    return response.data
+  }
+
   async subscribeToPlan({ fkIdUser, fkIdPlan, autoRenew = true, paymentMethod = 3 }) {
     const response = await this.http.post(this.resourcePath(), {
       fkIdUser: Number(fkIdUser),

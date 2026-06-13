@@ -1,17 +1,32 @@
 <script setup>
-import { onMounted, ref } from "vue"
+import { onMounted, ref, computed } from "vue"
 import { useToast } from 'primevue/usetoast'
 import Toast from 'primevue/toast' // Import explícito
 import RoutesHeaderTitle from "@/network/components/routes-header-title.component.vue"
 import RoutesList from "@/network/components/routes-list.component.vue"
 import {RouteService} from "@/network/services/route.service.js";
-import { getDriverId } from "@/shared/services/session.service.js";
+import { SubscriptionService } from "@/subscriptions/services/subscription.service.js";
+import { getDriverId, getUserId } from "@/shared/services/session.service.js";
 
+const BASIC_MAX_ROUTES = 15
 
 const toast = useToast()
 const routes = ref([])
 const isLoading = ref(true)
 const error = ref(null)
+const isPremium = ref(false)
+
+const canCreateRoute = computed(() => isPremium.value || routes.value.length < BASIC_MAX_ROUTES)
+const limitMessage = `Plan Básico: máximo ${BASIC_MAX_ROUTES} rutas. Pasa a Premium para ilimitadas.`
+
+const loadPremium = async () => {
+  try {
+    const userId = getUserId()
+    if (!userId) return
+    const res = await new SubscriptionService().getPremiumStatus(userId)
+    isPremium.value = !!res?.isPremium
+  } catch { isPremium.value = false }
+}
 
 
 const loadRoutes = async () => {
@@ -53,12 +68,13 @@ const loadRoutes = async () => {
 
 onMounted(() => {
   loadRoutes()
+  loadPremium()
 })
 </script>
 
 <template>
   <Toast />
-  <routes-header-title @created="loadRoutes"/>
+  <routes-header-title :can-create="canCreateRoute" :limit-message="limitMessage" @created="loadRoutes"/>
   <routes-list
       :routes="routes"
       :isLoading="isLoading"

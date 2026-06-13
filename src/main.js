@@ -36,6 +36,7 @@ import Row from 'primevue/row'
 import Image from 'primevue/image'
 import { Form } from '@primevue/forms'
 import AutoComplete from 'primevue/autocomplete'
+import Chart from 'primevue/chart'
 
 // Styles
 import 'primeicons/primeicons.css'
@@ -132,5 +133,6 @@ app.component('pb-Row', Row)
 app.component('pb-Image', Image)
 app.component('pb-Form', Form)
 app.component('pb-AutoComplete', AutoComplete)
+app.component('pb-Chart', Chart)
 
 app.mount('#app')

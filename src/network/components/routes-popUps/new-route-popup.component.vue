@@ -7,6 +7,10 @@ import { getDriverId } from "@/shared/services/session.service.js";
 import { positiveNumber } from "@/shared/validation/validators.js";
 
 // Definición de props/emits (más explícito)
+const props = defineProps({
+  canCreate: { type: Boolean, default: true },
+  limitMessage: { type: String, default: '' }
+});
 const emit = defineEmits(['update:value', 'created']);
 
 const stopService = new StopService();
@@ -122,7 +126,12 @@ onMounted(()=>{
 </script>
 
 <template>
-  <pb-Button class="nueva-ruta-button" icon="pi pi-plus" label="Nueva ruta" @click="visiblePopupRoute = true"/>
+  <div class="new-route-trigger">
+    <pb-Button class="nueva-ruta-button" icon="pi pi-plus" label="Nueva ruta" :disabled="!canCreate" @click="visiblePopupRoute = true"/>
+    <small v-if="!canCreate && limitMessage" class="limit-hint">
+      <i class="pi pi-lock"></i> {{ limitMessage }}
+    </small>
+  </div>
   <pb-Dialog v-model:visible="visiblePopupRoute" modal :style="{ width: '50rem' }">
       <template #header>
         <h1 class="title">Nueva Ruta</h1>
@@ -254,6 +263,8 @@ onMounted(()=>{
   padding: 10px;
 }
 
+.new-route-trigger { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.limit-hint { display: inline-flex; align-items: center; gap: 5px; color: var(--gold-400, #c9a84c); font-size: 11px; max-width: 240px; text-align: right; }
 .nueva-ruta-button{
   /*Flex para centrar*/
   display: flex;

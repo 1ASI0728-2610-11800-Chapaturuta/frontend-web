@@ -23,6 +23,7 @@ export const APP_ROUTES = {
         ROOT: 'driver',
         ONBOARDING: 'onboarding',
         HOME: 'home',
+        DASHBOARD: 'dashboard',
         STOPS: 'stops',
         ROUTES: 'routes',
         INFORMATION: 'information',

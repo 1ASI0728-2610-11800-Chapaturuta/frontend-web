@@ -11,6 +11,7 @@ import RoutesList       from "@/discovery/components/routes-list/routes-list.vue
 import TravellerLayout  from "@/shared/components/TravellerLayout.vue"
 import { APP_ROUTES }   from "@/shared/services/routes.js"
 import DriverInformationPage from "@/driver/pages/DriverInformationPage.vue"
+import DriverDashboardPage from "@/driver/pages/DriverDashboardPage.vue"
 import PaymentsPage from "@/payments/pages/PaymentsPage.vue"
 import SubscriptionsPage from "@/subscriptions/pages/SubscriptionsPage.vue"
 import { DriverService } from "@/driver/services/driver.service.js"
@@ -94,6 +95,7 @@ const routes = [
                 component: DriverLayout,
                 children: [
                     { path: APP_ROUTES.DRIVER.HOME,          component: DriverHomePage },
+                    { path: APP_ROUTES.DRIVER.DASHBOARD,     component: DriverDashboardPage },
                     { path: APP_ROUTES.DRIVER.STOPS,         component: StopsPage },
                     { path: APP_ROUTES.DRIVER.ROUTES,        component: RoutesPage },
                     { path: APP_ROUTES.DRIVER.INFORMATION,   component: DriverInformationPage },

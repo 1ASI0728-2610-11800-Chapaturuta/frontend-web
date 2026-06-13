@@ -3,7 +3,10 @@ import StopsHeaderTitle from "@/network/components/stops-header-title.component.
 import stopsList from "@/network/components/stops-list.component.vue";
 import MapWithMarkers from "@/shared/components/MapWithMarkers.vue";
 import { StopService } from "@/network/services/stop.service.js";
-import { getDriverId } from "@/shared/services/session.service.js";
+import { SubscriptionService } from "@/subscriptions/services/subscription.service.js";
+import { getDriverId, getUserId } from "@/shared/services/session.service.js";
+
+const BASIC_MAX_STOPS = 30;
 
 export default {
   components: {
@@ -16,11 +19,29 @@ export default {
       stops: [],
       isLoading: false,
       error: null,
-      view: 'list'
+      view: 'list',
+      isPremium: false
     };
   },
 
+  computed: {
+    canCreateStop() {
+      return this.isPremium || this.stops.length < BASIC_MAX_STOPS;
+    },
+    limitMessage() {
+      return `Plan Básico: máximo ${BASIC_MAX_STOPS} paraderos. Pasa a Premium para ilimitados.`;
+    }
+  },
+
   methods: {
+    async loadPremium() {
+      try {
+        const userId = getUserId();
+        if (!userId) return;
+        const res = await new SubscriptionService().getPremiumStatus(userId);
+        this.isPremium = !!res?.isPremium;
+      } catch { this.isPremium = false; }
+    },
     async loadStops() {
       this.isLoading = true;
       this.error = null;
@@ -46,13 +67,14 @@ export default {
   },
   mounted() {
     this.loadStops();
+    this.loadPremium();
   }
 }
 </script>
 
 <template>
   <div class="stops-page">
-    <stops-header-title @created="handleCreated"/>
+    <stops-header-title :can-create="canCreateStop" :limit-message="limitMessage" @created="handleCreated"/>
     <div class="view-toggle">
       <button :class="{ active: view === 'list' }" @click="view = 'list'">
         <i class="pi pi-list"></i> Lista

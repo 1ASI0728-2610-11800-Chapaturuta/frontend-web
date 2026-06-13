@@ -1,5 +1,9 @@
 <script setup>
 import NewRoutePopupComponent from "@/network/components/routes-popUps/new-route-popup.component.vue";
+defineProps({
+  canCreate: { type: Boolean, default: true },
+  limitMessage: { type: String, default: '' }
+})
 const emit = defineEmits(["created"])
 </script>
 
@@ -10,7 +14,7 @@ const emit = defineEmits(["created"])
         <h1 class="page-title">Gestión de <span class="gold">Rutas</span></h1>
         <p class="page-sub">Administra las rutas de transporte que operas</p>
       </div>
-      <new-route-popup-component @created="emit('created')" />
+      <new-route-popup-component :can-create="canCreate" :limit-message="limitMessage" @created="emit('created')" />
     </div>
   </div>
 </template>

@@ -9,6 +9,11 @@ export default {
   name: "popUpNewStop",
   components: { MapPicker },
 
+  props: {
+    canCreate: { type: Boolean, default: true },
+    limitMessage: { type: String, default: '' }
+  },
+
   setup() {
     const visiblePop = ref(false);
     const selectedImage = ref(null);
@@ -242,6 +247,14 @@ export default {
       }
     },
 
+    onTriggerClick() {
+      if (!this.canCreate) {
+        this.$toast.add({ severity: 'info', summary: 'Límite del plan Básico', detail: this.limitMessage, life: 4000 });
+        return;
+      }
+      this.visiblePop = true;
+    },
+
     async createStop() {
       this.submitted = true;
       if (!this.isFormValid) {
@@ -332,7 +345,18 @@ export default {
 </script>
 
 <template>
-  <pb-Button class="nuevo-paradero-button" icon="pi pi-plus" label="Nuevo Paradero" @click="visiblePop = true"/>
+  <div class="new-stop-trigger">
+    <pb-Button
+      class="nuevo-paradero-button"
+      icon="pi pi-plus"
+      label="Nuevo Paradero"
+      :disabled="!canCreate"
+      @click="onTriggerClick"
+    />
+    <small v-if="!canCreate && limitMessage" class="limit-hint">
+      <i class="pi pi-lock"></i> {{ limitMessage }}
+    </small>
+  </div>
 
   <pb-Dialog v-model:visible="visiblePop" modal :style="{ width: '50rem' }" @hide="onDialogHide">
     <template #header>
@@ -593,6 +617,8 @@ export default {
   padding: 10px;
 }
 
+.new-stop-trigger { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.limit-hint { display: inline-flex; align-items: center; gap: 5px; color: var(--gold-400, #c9a84c); font-size: 11px; max-width: 240px; text-align: right; }
 .nuevo-paradero-button{
   display: flex;
   align-items: center;

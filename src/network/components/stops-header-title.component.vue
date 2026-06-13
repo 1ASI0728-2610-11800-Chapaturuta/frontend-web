@@ -4,6 +4,10 @@ import popUpNewStop from "@/network/components/stop-popUps/new-stop-popup.compon
 export default {
   name: "StopsHeaderTitle",
   components: { popUpNewStop },
+  props: {
+    canCreate: { type: Boolean, default: true },
+    limitMessage: { type: String, default: '' }
+  },
   emits: ['created'],
   methods: {
     handleStopCreated(newStop) {
@@ -25,7 +29,7 @@ export default {
           <i class="pi pi-map-marker"></i>
           <span>{{ $parent.stops?.length || 0 }} paraderos</span>
         </div>
-        <pop-up-new-stop @created="handleStopCreated" />
+        <pop-up-new-stop :can-create="canCreate" :limit-message="limitMessage" @created="handleStopCreated" />
       </div>
     </div>
   </div>
