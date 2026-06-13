@@ -43,7 +43,7 @@
             <small v-if="touched.email && !isEmailValid">{{ t('register.invalidEmail') }}</small>
           </div>
 
-          <div class="field-group" :class="{ error: touched.password && !password }">
+          <div class="field-group" :class="{ error: touched.password && passwordError }">
             <label>{{ t('register.passwordPlaceholder') }}</label>
             <div class="input-wrapper">
               <i class="pi pi-lock input-icon"></i>
@@ -52,7 +52,8 @@
                 <i :class="showPwd ? 'pi pi-eye-slash' : 'pi pi-eye'"></i>
               </button>
             </div>
-            <small v-if="touched.password && !password">{{ t('register.required') }}</small>
+            <small v-if="touched.password && passwordError">{{ passwordError }}</small>
+            <small v-else class="hint">Mínimo 8 caracteres, una mayúscula y un número.</small>
           </div>
 
           <div class="field-group" :class="{ error: touched.role && !role }">
@@ -94,6 +95,8 @@ import { ref, reactive, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { APP_ROUTES } from '@/shared/services/routes.js'
 import { AuthService } from '@/access-and-identity/services/auth.service.js'
+import { passwordStrong } from '@/shared/validation/validators.js'
+import { extractApiError } from '@/shared/services/api-error.js'
 
 const { t, locale } = useI18n()
 
@@ -110,8 +113,9 @@ const messageType = ref('success')
 const touched = reactive({ firstName: false, lastName: false, email: false, password: false, role: false })
 
 const isEmailValid = computed(() => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value))
+const passwordError = computed(() => passwordStrong(password.value))
 const canSubmit    = computed(() =>
-  firstName.value && lastName.value && isEmailValid.value && password.value && role.value !== ''
+  firstName.value && lastName.value && isEmailValid.value && !passwordError.value && role.value !== ''
 )
 
 function setLang(lang) { locale.value = lang }
@@ -134,7 +138,7 @@ async function handleSubmit() {
   } catch (err) {
     console.error('Register error:', err)
     messageType.value = 'error'
-    message.value = t('register.error')
+    message.value = err?.friendlyMessage || extractApiError(err, t('register.error'))
   } finally {
     isLoading.value = false
   }
@@ -232,6 +236,7 @@ async function handleSubmit() {
 .field-group.error input,
 .field-group.error select { border-color: var(--danger); }
 .field-group small { color: var(--danger); font-size: 11px; }
+.field-group small.hint { color: var(--carbon-400); }
 
 .toggle-pwd { position: absolute; right: 10px; background: none; border: none; color: var(--carbon-400); cursor: pointer; padding: 4px; }
 .toggle-pwd:hover { color: var(--carbon-100); }

@@ -58,6 +58,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { PaymentService } from '@/payments/services/payment.service.js'
+import { required, email as emailRule, cardNumber, expiryMMYY, cvv as cvvRule, dni } from '@/shared/validation/validators.js'
 
 const props = defineProps({
   paymentId: { type: [Number, String], required: true },
@@ -112,12 +113,12 @@ function buildDeviceSessionId() {
 onMounted(() => { deviceSessionId.value = buildDeviceSessionId() })
 
 function validate() {
-  if (!card.value.holder) return 'Ingresa el titular de la tarjeta'
-  if (digits.value.length < 13) return 'Número de tarjeta inválido'
-  if (!/^\d{2}\/\d{2}$/.test(card.value.expiry)) return 'Vencimiento inválido (MM/AA)'
-  if (card.value.cvv.length < 3) return 'CVV inválido'
-  if (!card.value.payerEmail) return 'Ingresa el email del pagador'
-  return ''
+  return required(card.value.holder, 'El titular de la tarjeta')
+    || cardNumber(card.value.number)
+    || expiryMMYY(card.value.expiry)
+    || cvvRule(card.value.cvv)
+    || emailRule(card.value.payerEmail)
+    || dni(card.value.payerDocument) // backend exige PayerDocumentNumber (DNI 8 dígitos)
 }
 
 async function submit() {
@@ -143,7 +144,7 @@ async function submit() {
     const result = await service.chargePayU(props.paymentId, payload)
     emit('paid', result)
   } catch (err) {
-    const detail = err?.data?.message || err?.message || 'No se pudo procesar el pago'
+    const detail = err?.friendlyMessage || err?.data?.message || err?.message || 'No se pudo procesar el pago'
     formError.value = detail
     emit('error', detail)
   } finally {

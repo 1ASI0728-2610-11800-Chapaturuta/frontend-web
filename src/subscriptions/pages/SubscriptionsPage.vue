@@ -23,9 +23,21 @@
     <section class="active-card">
       <div>
         <span class="eyebrow">Suscripcion activa</span>
-        <h2>{{ activeSubscription ? activeSubscription.status : 'Plan Basico (Gratis)' }}</h2>
+        <h2>
+          {{ activeSubscription ? 'Premium' : 'Plan Basico (Gratis)' }}
+          <span v-if="activeSubscription" class="status-badge" :class="statusClass(activeSubscription.status)">
+            {{ statusLabel(activeSubscription.status) }}
+          </span>
+        </h2>
         <p v-if="activeSubscription">Plan #{{ activeSubscription.fkIdPlan }} · Usuario #{{ activeSubscription.fkIdUser }}</p>
         <p v-else>Estas en el plan gratuito. Pasa a Premium para desbloquear todo.</p>
+        <p v-if="activeSubscription" class="renew-info">
+          <i class="pi pi-calendar"></i>
+          Pago mensual de <strong>{{ premiumPriceLabel }}</strong> ·
+          {{ activeSubscription.autoRenew ? 'Se renueva' : 'Vence' }} el
+          <strong>{{ formatDate(activeSubscription.endsAt) }}</strong>
+          <span v-if="daysLeft !== null" class="days-left">({{ daysLeftLabel }})</span>
+        </p>
       </div>
       <div v-if="activeSubscription" class="active-side">
         <span class="active-pill">{{ activeSubscription.autoRenew ? 'Auto-renovable' : 'Manual' }}</span>
@@ -83,6 +95,10 @@
             <span class="amount">{{ premiumPriceLabel }}</span>
             <span class="period">/ mes</span>
           </div>
+          <p class="billing-note">
+            <i class="pi pi-sync"></i>
+            Facturacion mensual · se cobra cada mes · cancela cuando quieras
+          </p>
           <ul class="feature-list">
             <li v-for="(f, i) in features.premium.items" :key="i" class="highlight">
               <i class="pi pi-check-circle"></i><span v-html="f"></span>
@@ -91,12 +107,11 @@
           <button
             class="subscribe-btn"
             type="button"
-            :disabled="!premiumPlan || !premiumPlan.isActive || subscribingId === premiumPlan?.id"
-            @click="premiumPlan && subscribe(premiumPlan)"
+            :disabled="!premiumPlan || !premiumPlan.isActive"
+            @click="premiumPlan && openCheckout(premiumPlan)"
           >
-            <span v-if="subscribingId === premiumPlan?.id" class="spinner"></span>
-            <i v-else class="pi pi-bolt"></i>
-            {{ subscribingId === premiumPlan?.id ? 'Procesando...' : 'Pasar a Premium' }}
+            <i class="pi pi-bolt"></i>
+            Pasar a Premium
           </button>
         </article>
       </section>
@@ -133,11 +148,97 @@
       <div v-else class="history-list">
         <div v-for="sub in history" :key="sub.id" class="history-row">
           <span>#{{ sub.id }}</span>
-          <strong>{{ sub.status }}</strong>
+          <strong>
+            <span class="status-badge" :class="statusClass(sub.status)">{{ statusLabel(sub.status) }}</span>
+          </strong>
           <span>Plan #{{ sub.fkIdPlan }}</span>
         </div>
       </div>
     </section>
+
+    <!-- ── Modal de checkout (elegir metodo → pagar → exito) ── -->
+    <pb-Dialog
+      v-model:visible="showCheckout"
+      modal
+      :header="checkoutHeader"
+      :style="{ width: '30rem' }"
+      :closable="checkoutStep !== 'processing'"
+      @hide="resetCheckout"
+    >
+      <!-- Paso 1: elegir metodo -->
+      <div v-if="checkoutStep === 'method'" class="method-step">
+        <p class="method-intro">
+          Elige como quieres pagar tu plan Premium.
+        </p>
+        <div class="billing-summary">
+          <div class="bs-row"><span>Plan</span><strong>Premium mensual</strong></div>
+          <div class="bs-row"><span>Cobro hoy</span><strong>{{ premiumPriceLabel }}</strong></div>
+          <div class="bs-row"><span>Vence</span><strong>{{ formatDate(nextBillingDate) }}</strong></div>
+          <p class="bs-note">Es un pago por <strong>1 mes</strong>. Al vencer pierdes Premium salvo que renueves.</p>
+        </div>
+        <button class="method-card" type="button" @click="chooseMethod('Card')">
+          <i class="pi pi-credit-card"></i>
+          <div><strong>Tarjeta</strong><span>Credito o debito vía PayU</span></div>
+          <i class="pi pi-chevron-right go"></i>
+        </button>
+        <button class="method-card" type="button" @click="chooseMethod('Yape')">
+          <i class="pi pi-qrcode"></i>
+          <div><strong>Yape</strong><span>Escanea un QR con tu app</span></div>
+          <i class="pi pi-chevron-right go"></i>
+        </button>
+        <button class="method-card" type="button" @click="chooseMethod('Plin')">
+          <i class="pi pi-qrcode"></i>
+          <div><strong>Plin</strong><span>Escanea un QR con tu app</span></div>
+          <i class="pi pi-chevron-right go"></i>
+        </button>
+        <p v-if="checkoutError" class="checkout-error">{{ checkoutError }}</p>
+      </div>
+
+      <!-- Paso intermedio: creando la suscripcion/pago -->
+      <div v-else-if="checkoutStep === 'processing'" class="processing-step">
+        <span class="spinner big"></span>
+        <p>Preparando tu pago...</p>
+      </div>
+
+      <!-- Paso 2a: tarjeta (PayU) -->
+      <div v-else-if="checkoutStep === 'card'">
+        <div class="sandbox-hint">
+          <i class="pi pi-info-circle"></i>
+          <div>
+            <strong>Tarjeta de prueba (sandbox PayU)</strong>
+            <span>Nro: 4111 1111 1111 1111 · Venc: 12/29 · CVV: 123 · cualquier email/DNI</span>
+          </div>
+        </div>
+        <PayuCardForm
+          :payment-id="paymentId"
+          :amount="premiumPrice"
+          @paid="onPaid"
+          @error="(e) => checkoutError = e"
+        />
+      </div>
+
+      <!-- Paso 2b: Yape / Plin (QR) -->
+      <div v-else-if="checkoutStep === 'qr'">
+        <PaymentQr
+          :payment-id="paymentId"
+          :amount="premiumPrice"
+          :method="selectedMethod"
+          @paid="onPaid"
+          @error="(e) => checkoutError = e"
+        />
+      </div>
+
+      <!-- Paso 3: exito -->
+      <div v-else-if="checkoutStep === 'success'" class="success-step">
+        <div class="check-circle"><i class="pi pi-check"></i></div>
+        <h3>Pago exitoso!</h3>
+        <p>Tu suscripcion Premium ya esta activa.</p>
+        <p v-if="activeSubscription" class="success-until">
+          Valida hasta el <strong>{{ formatDate(activeSubscription.endsAt) }}</strong> (1 mes).
+        </p>
+        <button class="primary-btn" type="button" @click="closeCheckout">Listo</button>
+      </div>
+    </pb-Dialog>
   </div>
 </template>
 
@@ -145,6 +246,8 @@
 import { onMounted, ref, computed } from 'vue'
 import { PlanService, SubscriptionService } from '@/subscriptions/services/subscription.service.js'
 import { getCurrentUser, getUserId } from '@/shared/services/session.service.js'
+import PayuCardForm from '@/payments/components/payu-card-form.component.vue'
+import PaymentQr from '@/payments/components/payment-qr.component.vue'
 
 const planService = new PlanService()
 const subscriptionService = new SubscriptionService()
@@ -153,8 +256,24 @@ const history = ref([])
 const activeSubscription = ref(null)
 const loading = ref(false)
 const error = ref('')
-const subscribingId = ref(null)
 const processing = ref(false)
+
+// ── Estado del checkout ──────────────────────────────────────────────────────
+const PAYMENT_METHOD_ENUM = { Yape: 0, Plin: 1, Card: 2 } // coincide con el enum del backend
+const showCheckout = ref(false)
+const checkoutStep = ref('method') // method | processing | card | qr | success
+const selectedMethod = ref('Card')
+const checkoutPlan = ref(null)
+const paymentId = ref(null)
+const checkoutError = ref('')
+
+const premiumPrice = computed(() => Number(checkoutPlan.value?.price ?? premiumPlan.value?.price ?? 0))
+const checkoutHeader = computed(() => {
+  if (checkoutStep.value === 'success') return 'Pago confirmado'
+  if (checkoutStep.value === 'card') return 'Pago con tarjeta (PayU)'
+  if (checkoutStep.value === 'qr') return `Pago con ${selectedMethod.value}`
+  return 'Pasar a Premium'
+})
 
 const isDriver = computed(() => Number(getCurrentUser()?.role) === 2)
 const premiumPlan = computed(() => plans.value[0] || null)
@@ -243,6 +362,36 @@ function formatMoney(value) {
   return Number(value || 0).toFixed(2)
 }
 
+// ── Fechas / facturacion mensual ────────────────────────────────────────────
+function formatDate(value) {
+  if (!value) return '-'
+  try {
+    return new Date(value).toLocaleDateString('es-PE', { day: '2-digit', month: 'long', year: 'numeric' })
+  } catch { return String(value) }
+}
+
+// Fecha de vencimiento estimada para el resumen del checkout (hoy + 1 mes).
+const nextBillingDate = computed(() => {
+  const d = new Date()
+  d.setMonth(d.getMonth() + 1)
+  return d
+})
+
+const daysLeft = computed(() => {
+  if (!activeSubscription.value?.endsAt) return null
+  const end = new Date(activeSubscription.value.endsAt)
+  const diff = Math.ceil((end.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+  return diff
+})
+const daysLeftLabel = computed(() => {
+  const d = daysLeft.value
+  if (d === null) return ''
+  if (d < 0) return 'vencida'
+  if (d === 0) return 'vence hoy'
+  if (d === 1) return 'queda 1 dia'
+  return `quedan ${d} dias`
+})
+
 async function loadActive(userId) {
   try {
     activeSubscription.value = await subscriptionService.getActiveByUserId(userId)
@@ -276,24 +425,63 @@ async function load() {
   }
 }
 
-async function subscribe(plan) {
+// ── Checkout: abrir modal y elegir metodo ──────────────────────────────────
+function openCheckout(plan) {
+  checkoutPlan.value = plan
+  checkoutStep.value = 'method'
+  checkoutError.value = ''
+  paymentId.value = null
+  showCheckout.value = true
+}
+
+// Crea la suscripcion (PendingPayment) + el pago, luego muestra el paso de pago.
+async function chooseMethod(method) {
   const userId = getUserId()
-  if (!userId) return
-  subscribingId.value = plan.id
-  error.value = ''
+  if (!userId || !checkoutPlan.value) return
+  selectedMethod.value = method
+  checkoutStep.value = 'processing'
+  checkoutError.value = ''
   try {
-    await subscriptionService.subscribeToPlan({
+    const subscription = await subscriptionService.subscribeToPlan({
       fkIdUser: userId,
-      fkIdPlan: plan.id,
+      fkIdPlan: checkoutPlan.value.id,
       autoRenew: true,
-      paymentMethod: 3
+      paymentMethod: PAYMENT_METHOD_ENUM[method]
     })
-    await load()
+    paymentId.value = subscription?.fkIdPayment
+    if (!paymentId.value) throw new Error('No se genero el pago de la suscripcion')
+    checkoutStep.value = method === 'Card' ? 'card' : 'qr'
   } catch (err) {
-    error.value = err?.data?.message || err?.message || 'No se pudo crear la suscripcion'
-  } finally {
-    subscribingId.value = null
+    checkoutError.value = err?.data?.message || err?.message || 'No se pudo iniciar el pago'
+    checkoutStep.value = 'method'
   }
+}
+
+// Pago confirmado (tarjeta, QR escaneado o "simular pago"): refrescar y mostrar exito.
+async function onPaid() {
+  checkoutStep.value = 'success'
+  await load()
+}
+
+function closeCheckout() {
+  showCheckout.value = false
+}
+
+function resetCheckout() {
+  checkoutStep.value = 'method'
+  paymentId.value = null
+  checkoutPlan.value = null
+  checkoutError.value = ''
+}
+
+// ── Badge de estado de suscripcion ──────────────────────────────────────────
+function statusLabel(status) {
+  const map = { Active: 'Activo', PendingPayment: 'Pendiente', Cancelled: 'Cancelado', Expired: 'Expirado' }
+  return map[status] || status
+}
+function statusClass(status) {
+  const map = { Active: 'ok', PendingPayment: 'pending', Cancelled: 'danger', Expired: 'muted' }
+  return map[status] || 'muted'
 }
 
 async function cancel() {
@@ -369,6 +557,12 @@ onMounted(load)
 .eyebrow { color: var(--gold-400); font-size: 11px; text-transform: uppercase; font-weight: 700; }
 .active-card h2 { color: var(--carbon-100); margin-top: 4px; }
 .active-card p { color: var(--carbon-400); font-size: 0.875rem; }
+.renew-info { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 6px; color: var(--carbon-300) !important; }
+.renew-info i { color: var(--gold-400); }
+.renew-info strong { color: var(--gold-300); }
+.days-left { color: var(--carbon-500); font-size: 0.8rem; }
+.billing-note { display: flex; align-items: center; gap: 6px; color: var(--carbon-400); font-size: 0.76rem; margin-top: -4px; }
+.billing-note i { color: var(--gold-400); font-size: 13px; }
 .active-pill { height: fit-content; padding: 5px 10px; border-radius: 999px; background: rgba(74,222,128,0.12); color: var(--success); font-size: 12px; font-weight: 700; }
 .active-side { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
 .active-actions { display: flex; gap: 8px; }
@@ -455,7 +649,60 @@ onMounted(load)
 .history-row { display: grid; grid-template-columns: 80px 1fr 1fr; gap: 1rem; align-items: center; }
 .history-row strong { color: var(--carbon-100); }
 .spinner { width: 14px; height: 14px; border: 2px solid var(--carbon-950); border-top-color: transparent; border-radius: 50%; animation: spin 0.7s linear infinite; }
+.spinner.big { width: 40px; height: 40px; border-width: 4px; border-color: var(--gold-400); border-top-color: transparent; }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Badge de estado ── */
+.status-badge { display: inline-block; margin-left: 8px; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 999px; vertical-align: middle; }
+.status-badge.ok { background: rgba(74,222,128,0.14); color: var(--success); }
+.status-badge.pending { background: rgba(201,168,76,0.16); color: var(--gold-400); }
+.status-badge.danger { background: rgba(248,113,113,0.14); color: var(--danger); }
+.status-badge.muted { background: var(--carbon-700); color: var(--carbon-300); }
+
+/* ── Modal de checkout ── */
+.method-intro { color: var(--carbon-300); font-size: 0.9rem; margin-bottom: 0.85rem; }
+.method-intro strong { color: var(--gold-400); }
+.billing-summary {
+  background: var(--carbon-900); border: 1px solid var(--carbon-700);
+  border-radius: var(--radius-md); padding: 12px 14px; margin-bottom: 1rem;
+  display: flex; flex-direction: column; gap: 7px;
+}
+.bs-row { display: flex; justify-content: space-between; font-size: 0.85rem; }
+.bs-row span { color: var(--carbon-400); }
+.bs-row strong { color: var(--carbon-100); }
+.bs-note { color: var(--carbon-400); font-size: 0.78rem; margin-top: 4px; border-top: 1px solid var(--carbon-700); padding-top: 8px; }
+.bs-note strong { color: var(--gold-300); }
+.success-until { color: var(--carbon-300); font-size: 0.85rem; }
+.success-until strong { color: var(--gold-300); }
+.method-card {
+  display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
+  background: var(--carbon-900); border: 1px solid var(--carbon-700); color: var(--carbon-100);
+  border-radius: var(--radius-md); padding: 14px; cursor: pointer; margin-bottom: 10px;
+  font-family: var(--font-family); transition: border-color 0.15s;
+}
+.method-card:hover { border-color: var(--gold-500); }
+.method-card > i:first-child { font-size: 22px; color: var(--gold-400); }
+.method-card div { flex: 1; display: flex; flex-direction: column; }
+.method-card div strong { font-size: 0.95rem; }
+.method-card div span { color: var(--carbon-400); font-size: 0.78rem; }
+.method-card .go { color: var(--carbon-500); font-size: 14px; }
+.checkout-error { color: var(--danger); font-size: 0.82rem; margin-top: 6px; }
+.processing-step { display: flex; flex-direction: column; align-items: center; gap: 1rem; padding: 1.5rem 0; color: var(--carbon-300); }
+.sandbox-hint {
+  display: flex; gap: 10px; align-items: flex-start;
+  background: rgba(96,165,250,0.08); border: 1px solid rgba(96,165,250,0.3);
+  border-radius: var(--radius-md); padding: 10px 12px; margin-bottom: 14px;
+}
+.sandbox-hint i { color: #93c5fd; margin-top: 2px; }
+.sandbox-hint strong { display: block; color: var(--carbon-100); font-size: 0.82rem; }
+.sandbox-hint span { color: var(--carbon-400); font-size: 0.76rem; }
+.success-step { display: flex; flex-direction: column; align-items: center; gap: 0.8rem; padding: 1rem 0; text-align: center; }
+.success-step h3 { color: var(--carbon-50); font-size: 1.25rem; font-weight: 800; }
+.success-step p { color: var(--carbon-400); font-size: 0.9rem; }
+.check-circle { width: 68px; height: 68px; border-radius: 50%; background: rgba(74,222,128,0.12); color: var(--success); display: flex; align-items: center; justify-content: center; font-size: 34px; animation: pop 0.4s ease; }
+@keyframes pop { 0% { transform: scale(0.4); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+.primary-btn { margin-top: 0.5rem; border: none; cursor: pointer; background: var(--gradient-gold); color: var(--carbon-950); font-weight: 800; padding: 11px 28px; border-radius: var(--radius-md); font-family: var(--font-family); }
+
 @media (max-width: 800px) {
   .plans-grid { grid-template-columns: 1fr; }
   .page-header, .active-card { flex-direction: column; }

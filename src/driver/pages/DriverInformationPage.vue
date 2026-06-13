@@ -134,7 +134,7 @@ async function uploadPhoto() {
     success.value = true
     setTimeout(() => { success.value = false }, 3000)
   } catch (err) {
-    errors.value = [err?.data?.message || err?.message || 'No se pudo subir la foto']
+    errors.value = [err?.friendlyMessage || err?.data?.message || err?.message || 'No se pudo subir la foto']
   } finally {
     uploadingPhoto.value = false
   }
@@ -159,7 +159,7 @@ async function load() {
   try {
     Object.assign(driver, new Driver(await resolveDriver()))
   } catch (err) {
-    loadError.value = err?.data?.message || err?.message || 'No se pudo cargar el perfil'
+    loadError.value = err?.friendlyMessage || err?.data?.message || err?.message || 'No se pudo cargar el perfil'
   } finally {
     loading.value = false
   }
@@ -178,7 +178,7 @@ async function save() {
     success.value = true
     setTimeout(() => { success.value = false }, 3000)
   } catch (err) {
-    errors.value = [err?.data?.message || err?.message || 'No se pudo guardar la informacion']
+    errors.value = [err?.friendlyMessage || err?.data?.message || err?.message || 'No se pudo guardar la informacion']
   } finally {
     saving.value = false
   }
@@ -188,7 +188,7 @@ async function toggleAvailability() {
   try {
     Object.assign(driver, new Driver(await service.toggleAvailability(driver.id)))
   } catch (err) {
-    errors.value = [err?.data?.message || err?.message || 'No se pudo cambiar la disponibilidad']
+    errors.value = [err?.friendlyMessage || err?.data?.message || err?.message || 'No se pudo cambiar la disponibilidad']
   }
 }
 

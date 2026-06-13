@@ -7,10 +7,12 @@ import { RouteService } from "@/network/services/route.service.js";
 import MapWithMarkers from "@/shared/components/MapWithMarkers.vue";
 import StarRating from "@/shared/components/StarRating.vue";
 import ScheduleDetailsItem from "@/discovery/components/route-details/schedule-details-item.component.vue";
+import PaymentCheckoutDialog from "@/payments/components/payment-checkout-dialog.component.vue";
+import { dni as dniRule, integerMin } from "@/shared/validation/validators.js";
 
 export default {
   name: "route-complete-detail",
-  components: { MapWithMarkers, StarRating, ScheduleDetailsItem },
+  components: { MapWithMarkers, StarRating, ScheduleDetailsItem, PaymentCheckoutDialog },
   props: {
     routeId: {
       type: String,
@@ -40,7 +42,8 @@ export default {
       reserving: false,
       reserveSeats: 1,
       reserveDocument: '',
-      reservePaymentMethod: 'Card'
+      showCheckout: false,
+      checkoutAmount: 0
     };
   },
   computed: {
@@ -56,6 +59,15 @@ export default {
     },
     driverId() {
       return this.route?.stops?.[0]?.fk_driver_id ?? this.route?.fkIdDriver ?? this.route?.driverId ?? null;
+    },
+    driverName() {
+      return this.route?.driverName ?? this.driverSummary?.name ?? this.driverSummary?.fullName ?? '';
+    },
+    seatsError() {
+      return integerMin(this.reserveSeats, 1, 'Los asientos');
+    },
+    dniError() {
+      return dniRule(this.reserveDocument);
     },
     ratingAverage() {
       const s = this.driverSummary;
@@ -148,45 +160,46 @@ export default {
     openReserve() {
       this.reserveSeats = 1;
       this.reserveDocument = '';
-      this.reservePaymentMethod = 'Card';
       this.showReserve = true;
     },
-    async confirmReserve() {
+    // Valida y abre el checkout (el pago se hace ANTES de confirmar la reserva).
+    confirmReserve() {
       if (!this.route || !this.originStop || !this.destinationStop) {
         this.$toast?.add({ severity: 'warn', summary: 'Sin datos', detail: 'La ruta no tiene paraderos válidos.', life: 3000 });
         return;
       }
-      if (!this.reserveDocument) {
-        this.$toast?.add({ severity: 'warn', summary: 'Documento requerido', detail: 'Ingresa tu número de documento.', life: 3000 });
+      const err = this.seatsError || this.dniError;
+      if (err) {
+        this.$toast?.add({ severity: 'warn', summary: 'Revisa los datos', detail: err, life: 3500 });
         return;
       }
-      this.reserving = true;
-      try {
-        const trip = await this.tripService.createTrip({
-          fkIdRoute: this.route.id,
-          fkIdOriginStop: this.originStop.id,
-          fkIdDestinationStop: this.destinationStop.id,
-          price: this.route.price,
-          availableSeats: Number(this.reserveSeats)
-        });
-        const tripId = trip?.id ?? trip?.tripId;
-        await this.reservationService.createReservation({
-          fkIdUser: this.user.id,
-          fkIdTrip: tripId,
-          documentType: 'Dni',
-          documentNumber: this.reserveDocument,
-          seats: this.reserveSeats,
-          paymentMethod: this.reservePaymentMethod
-        });
-        this.$toast?.add({ severity: 'success', summary: 'Reserva creada', detail: 'Tu reserva fue registrada correctamente.', life: 3000 });
-        this.showReserve = false;
-        this.$router.push({ name: 'Reservations' });
-      } catch (err) {
-        const detail = err?.data?.message || err?.message || 'No se pudo crear la reserva.';
-        this.$toast?.add({ severity: 'error', summary: 'Error', detail, life: 4000 });
-      } finally {
-        this.reserving = false;
-      }
+      this.checkoutAmount = Number(this.route.price || 0) * Number(this.reserveSeats || 1);
+      this.showReserve = false;
+      this.showCheckout = true;
+    },
+    // Crea el viaje + la reserva con el metodo elegido; devuelve el id del pago para el checkout.
+    async reservePayProvider(method) {
+      const trip = await this.tripService.createTrip({
+        fkIdRoute: this.route.id,
+        fkIdOriginStop: this.originStop.id,
+        fkIdDestinationStop: this.destinationStop.id,
+        price: this.route.price,
+        availableSeats: Number(this.reserveSeats)
+      });
+      const tripId = trip?.id ?? trip?.tripId;
+      const reservation = await this.reservationService.createReservation({
+        fkIdUser: this.user.id,
+        fkIdTrip: tripId,
+        documentType: 'Dni',
+        documentNumber: this.reserveDocument,
+        seats: this.reserveSeats,
+        paymentMethod: method
+      });
+      return reservation?.fkIdPayment;
+    },
+    onReservationPaid() {
+      this.$toast?.add({ severity: 'success', summary: 'Reserva pagada', detail: 'Tu reserva fue pagada y confirmada.', life: 3000 });
+      this.$router.push({ name: 'Reservations' });
     },
     formatDuration(minutes) {
       if (minutes == null) return '';
@@ -367,26 +380,35 @@ export default {
       <div class="picker-body">
         <label class="picker-label">Asientos</label>
         <input v-model.number="reserveSeats" type="number" min="1" class="picker-select" />
+        <small v-if="seatsError" class="field-error">{{ seatsError }}</small>
         <label class="picker-label">Número de documento (DNI)</label>
-        <input v-model="reserveDocument" type="text" class="picker-select" placeholder="Ej. 12345678" />
-        <label class="picker-label">Método de pago</label>
-        <select v-model="reservePaymentMethod" class="picker-select">
-          <option value="Card">Tarjeta</option>
-          <option value="Yape">Yape</option>
-          <option value="Plin">Plin</option>
-          <option value="Cash">Efectivo</option>
-        </select>
+        <input v-model="reserveDocument" type="text" inputmode="numeric" maxlength="8" class="picker-select" placeholder="Ej. 12345678" />
+        <small v-if="dniError" class="field-error">{{ dniError }}</small>
+        <p class="reserve-note">
+          <i class="pi pi-info-circle"></i>
+          La reserva se paga por adelantado. Elegirás el método (Yape, Plin o Tarjeta) en el siguiente paso.
+        </p>
       </div>
       <template #footer>
         <pb-Button label="Cancelar" text @click="showReserve = false" />
         <pb-Button
-          label="Reservar"
-          icon="pi pi-check"
-          :loading="reserving"
+          label="Continuar al pago"
+          icon="pi pi-arrow-right"
+          :disabled="!!seatsError || !!dniError"
           @click="confirmReserve"
         />
       </template>
     </pb-Dialog>
+
+    <PaymentCheckoutDialog
+      v-model="showCheckout"
+      title="Pagar reserva"
+      :amount="checkoutAmount"
+      :recipient="driverName"
+      success-message="Tu reserva fue pagada y confirmada."
+      :pay-provider="reservePayProvider"
+      @paid="onReservationPaid"
+    />
   </div>
 </template>
 
@@ -480,4 +502,7 @@ export default {
 }
 .picker-select:focus { outline: none; border-color: var(--gold-500); }
 .picker-empty { font-size: 0.85rem; color: var(--carbon-400); }
+.reserve-note { display: flex; gap: 6px; font-size: 0.78rem; color: var(--carbon-400); margin-top: 8px; }
+.reserve-note i { color: var(--gold-400); margin-top: 2px; }
+.field-error { color: #e5484d; font-size: 12px; }
 </style>

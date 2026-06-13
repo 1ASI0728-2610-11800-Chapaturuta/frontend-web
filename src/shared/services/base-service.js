@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { extractApiError } from '@/shared/services/api-error.js';
 
 export class BaseService {
     /**
@@ -56,10 +57,17 @@ export class BaseService {
      * @returns {EnhancedError}
      */
     _enhanceError(error) {
+        // Idempotente: algunos servicios re-envuelven un error ya enriquecido
+        // (que ya no tiene .response). Tomamos los datos de .response o, si no,
+        // de los campos ya enriquecidos para no perder status/data/mensaje.
         const enhancedError = new Error(error.message);
-        enhancedError.status = error.response?.status;
-        enhancedError.data = error.response?.data;
+        enhancedError.status = error.response?.status ?? error.status;
+        enhancedError.data = error.response?.data ?? error.data;
         enhancedError.config = error.config;
+        enhancedError.code = error.code ?? error.config?.code;
+        // Mensaje legible listo para mostrar al usuario (red de seguridad ante
+        // reglas del backend no mapeadas en el formulario).
+        enhancedError.friendlyMessage = error.friendlyMessage ?? extractApiError(enhancedError);
         return enhancedError;
     }
 

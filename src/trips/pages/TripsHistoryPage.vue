@@ -27,8 +27,16 @@
         </div>
         <div class="trip-meta">
           <span class="status-badge" :class="statusClass(trip.status)">{{ statusLabel(trip.status) }}</span>
+          <span v-if="isPaid(trip)" class="status-badge st-paid"><i class="pi pi-check-circle"></i> Pagado</span>
           <span class="trip-date">{{ formatDateTime(trip.startTime || trip.date) }}</span>
           <span class="trip-price">S/ {{ trip.price }}</span>
+          <div v-if="!isDriver && canPay(trip)" class="trip-actions">
+            <button
+              class="act-btn act-pay"
+              :disabled="acting === trip.id"
+              @click="openPay(trip)"
+            ><i class="pi pi-wallet"></i> Pagar viaje</button>
+          </div>
           <div v-if="isDriver" class="trip-actions">
             <button
               v-if="normalizeStatus(trip.status) === 'pending'"
@@ -58,6 +66,16 @@
       <p>No tienes viajes registrados</p>
       <span>Tus viajes aparecerán aquí una vez uses la plataforma</span>
     </div>
+
+    <PaymentCheckoutDialog
+      v-model="showPay"
+      title="Pagar viaje"
+      :amount="payTrip?.price || 0"
+      :recipient="payTrip?.driverName || ''"
+      success-message="Tu viaje fue pagado."
+      :pay-provider="payTripProvider"
+      @paid="onTripPaid"
+    />
   </div>
 </template>
 
@@ -65,12 +83,18 @@
 import { ref, computed, onMounted } from 'vue'
 import { useToast } from 'primevue/usetoast'
 import { TripService } from '@/trips/services/trip.service.js'
+import { PaymentService } from '@/payments/services/payment.service.js'
+import PaymentCheckoutDialog from '@/payments/components/payment-checkout-dialog.component.vue'
 import { getUserId, getDriverId } from '@/shared/services/session.service.js'
 
 const trips     = ref([])
 const isLoading = ref(false)
 const acting    = ref(null)
+const paidTripIds = ref(new Set())
+const showPay   = ref(false)
+const payTrip   = ref(null)
 const svc = new TripService()
+const paymentSvc = new PaymentService()
 const toast = useToast()
 
 const currentUser = () => {
@@ -112,13 +136,57 @@ const load = async () => {
       if (driverId) trips.value = await svc.getTripHistoryByDriverId(driverId)
     } else {
       const userId = getUserId()
-      if (userId) trips.value = await svc.getTripHistoryByUserId(userId)
+      if (userId) {
+        trips.value = await svc.getTripHistoryByUserId(userId)
+        await loadPaidTrips(userId)
+      }
     }
   } catch (e) {
     toast.add({ severity: 'error', summary: 'Error', detail: e?.data?.message || 'No se pudo cargar el historial.', life: 4000 })
   } finally {
     isLoading.value = false
   }
+}
+
+// Estado "pagado" derivado de los pagos del usuario (referenceType "Trip", Completed).
+const loadPaidTrips = async (userId) => {
+  try {
+    const payments = await paymentSvc.getPaymentsByUserId(userId)
+    const ids = (payments || [])
+      .filter(p => String(p.referenceType).toLowerCase() === 'trip'
+        && String(p.status).toLowerCase() === 'completed')
+      .map(p => Number(p.referenceId))
+    paidTripIds.value = new Set(ids)
+  } catch {
+    paidTripIds.value = new Set()
+  }
+}
+
+const isPaid = (trip) => paidTripIds.value.has(Number(trip.id))
+const canPay = (trip) =>
+  !isPaid(trip) && ['inprogress', 'completed'].includes(normalizeStatus(trip.status))
+
+const openPay = (trip) => {
+  payTrip.value = trip
+  showPay.value = true
+}
+
+const payTripProvider = async (method) => {
+  const userId = getUserId()
+  const payment = await paymentSvc.createPayment({
+    fkIdUser: userId,
+    amount: Number(payTrip.value.price || 0),
+    method,
+    referenceType: 'Trip',
+    referenceId: Number(payTrip.value.id),
+    currency: 'PEN'
+  })
+  return payment?.id
+}
+
+const onTripPaid = async () => {
+  toast.add({ severity: 'success', summary: 'Viaje pagado', life: 2500 })
+  await load()
 }
 
 const doAction = async (trip, action) => {
@@ -187,6 +255,8 @@ onMounted(load)
 .st-progress  { background: rgba(251,191,36,0.15);  color: var(--warning); }
 .st-completed { background: rgba(74,222,128,0.15);  color: var(--success); }
 .st-cancelled { background: rgba(248,113,113,0.15); color: var(--danger); }
+.st-paid { background: rgba(74,222,128,0.18); color: var(--success); display: inline-flex; align-items: center; gap: 4px; }
+.st-paid i { font-size: 0.72rem; }
 
 .trip-actions { display: flex; gap: 6px; margin-top: 4px; }
 .act-btn {
@@ -198,6 +268,7 @@ onMounted(load)
 .act-start    { background: rgba(96,165,250,0.12); color: var(--info); border-color: rgba(96,165,250,0.3); }
 .act-complete { background: rgba(74,222,128,0.12); color: var(--success); border-color: rgba(74,222,128,0.3); }
 .act-cancel   { background: rgba(248,113,113,0.12); color: var(--danger); border-color: rgba(248,113,113,0.3); }
+.act-pay      { background: rgba(201,168,76,0.14); color: var(--gold-400); border-color: rgba(201,168,76,0.35); }
 
 .skeleton-list { display: flex; flex-direction: column; gap: 10px; }
 .sk-row { height: 68px; background: var(--carbon-800); border-radius: var(--radius-lg); }

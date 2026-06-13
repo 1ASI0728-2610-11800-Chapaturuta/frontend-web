@@ -17,6 +17,12 @@ import { DriverService } from "@/driver/services/driver.service.js"
 import { getCurrentUser, getDriverId, saveCurrentUser } from "@/shared/services/session.service.js"
 
 const routes = [
+    /* PAGO EXITOSO (publico, sin layout — destino del QR escaneable) */
+    {
+        path: `/${APP_ROUTES.PUBLIC.PAYMENT_SUCCESS}`,
+        name: "PaymentSuccess",
+        component: () => import('@/payments/pages/PaymentSuccessPage.vue')
+    },
     /* TRAVELLER / PUBLIC */
     {
         path: "/",

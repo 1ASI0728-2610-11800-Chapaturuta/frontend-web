@@ -14,7 +14,8 @@
       <input
         v-model="newName"
         type="text"
-        placeholder="Nombre de la colección"
+        maxlength="60"
+        placeholder="Nombre de la colección (máx. 60)"
         class="create-input"
         @keyup.enter="createCollection"
       />
@@ -41,13 +42,20 @@
         <div v-if="expanded === col.id" class="col-routes">
           <div v-if="loadingRoutes" class="routes-loading">Cargando rutas…</div>
           <template v-else>
-            <div v-for="r in (routesByCol[col.id] || [])" :key="r.id" class="route-row">
+            <router-link
+              v-for="r in (routesByCol[col.id] || [])"
+              :key="r.id"
+              class="route-row"
+              :to="{ name: 'route-detail', params: { routeId: r.id }, query: { routeData: JSON.stringify(r) } }"
+            >
               <i class="pi pi-directions"></i>
-              <span class="route-name">{{ r.name || r.routeName || `Ruta #${r.id}` }}</span>
-              <button class="route-remove" title="Quitar" @click.stop="removeRoute(col.id, r.id)">
+              <span class="route-name">{{ routeLabel(r) }}</span>
+              <span v-if="r.price != null" class="route-price">S/ {{ r.price }}</span>
+              <span class="route-stops">{{ r.stops?.length || 0 }} <i class="pi pi-map-marker"></i></span>
+              <button class="route-remove" title="Quitar" @click.prevent.stop="removeRoute(col.id, r.id)">
                 <i class="pi pi-trash"></i>
               </button>
-            </div>
+            </router-link>
             <p v-if="!(routesByCol[col.id] || []).length" class="routes-empty">Sin rutas en esta colección</p>
           </template>
         </div>
@@ -66,6 +74,7 @@
 import { ref, onMounted } from 'vue'
 import { useToast } from 'primevue/usetoast'
 import { CollectionService } from '@/collections/services/collection.service.js'
+import { RouteService } from '@/network/services/route.service.js'
 
 const collections = ref([])
 const routesByCol = ref({})
@@ -76,10 +85,19 @@ const showCreate  = ref(false)
 const newName     = ref('')
 const creating    = ref(false)
 const svc = new CollectionService()
+const routeSvc = new RouteService()
 const toast = useToast()
 
 const currentUser = () => {
   try { return JSON.parse(localStorage.getItem('user') || '{}') } catch { return {} }
+}
+
+// Mismo criterio de etiqueta que route-alpha-card: Origen → Destino, con fallback.
+const routeLabel = (r) => {
+  const stops = r.stops || []
+  const origin = stops[0]?.name
+  const dest = stops[stops.length - 1]?.name
+  return origin && dest ? `${origin} → ${dest}` : (r.name || r.routeName || `Ruta #${r.id}`)
 }
 
 const loadCollections = async () => {
@@ -88,7 +106,7 @@ const loadCollections = async () => {
     const user = currentUser()
     if (user.id) collections.value = await svc.getCollectionsByUserId(user.id)
   } catch (e) {
-    toast.add({ severity: 'error', summary: 'Error', detail: e?.data?.message || 'No se pudieron cargar las colecciones.', life: 4000 })
+    toast.add({ severity: 'error', summary: 'Error', detail: e?.friendlyMessage || e?.data?.message || 'No se pudieron cargar las colecciones.', life: 4000 })
   } finally {
     isLoading.value = false
   }
@@ -100,9 +118,15 @@ const toggle = async (collectionId) => {
   if (routesByCol.value[collectionId]) return
   loadingRoutes.value = true
   try {
-    routesByCol.value = { ...routesByCol.value, [collectionId]: await svc.getCollectionRoutes(collectionId) }
+    // El endpoint solo devuelve referencias (fkIdRoute); enriquecemos con la ruta completa
+    // (stops/price) para mostrarla y poder navegar al detalle, que necesita esos datos.
+    const items = await svc.getCollectionRoutes(collectionId)
+    const routes = await Promise.all(
+      items.map(it => routeSvc.getByRouteId(it.fkIdRoute).catch(() => null))
+    )
+    routesByCol.value = { ...routesByCol.value, [collectionId]: routes.filter(Boolean) }
   } catch (e) {
-    toast.add({ severity: 'error', summary: 'Error', detail: e?.data?.message || 'No se pudieron cargar las rutas.', life: 4000 })
+    toast.add({ severity: 'error', summary: 'Error', detail: e?.friendlyMessage || e?.data?.message || 'No se pudieron cargar las rutas.', life: 4000 })
   } finally {
     loadingRoutes.value = false
   }
@@ -120,7 +144,7 @@ const createCollection = async () => {
     toast.add({ severity: 'success', summary: 'Colección creada', detail: name, life: 3000 })
     await loadCollections()
   } catch (e) {
-    toast.add({ severity: 'error', summary: 'Error', detail: e?.data?.message || 'No se pudo crear la colección.', life: 4000 })
+    toast.add({ severity: 'error', summary: 'Error', detail: e?.friendlyMessage || e?.data?.message || 'No se pudo crear la colección.', life: 4000 })
   } finally {
     creating.value = false
   }
@@ -135,7 +159,7 @@ const removeRoute = async (collectionId, routeId) => {
     }
     toast.add({ severity: 'success', summary: 'Ruta eliminada', life: 2500 })
   } catch (e) {
-    toast.add({ severity: 'error', summary: 'Error', detail: e?.data?.message || 'No se pudo quitar la ruta.', life: 4000 })
+    toast.add({ severity: 'error', summary: 'Error', detail: e?.friendlyMessage || e?.data?.message || 'No se pudo quitar la ruta.', life: 4000 })
   }
 }
 
@@ -193,9 +217,19 @@ onMounted(loadCollections)
 
 .col-routes { border-top: 1px solid var(--carbon-700); padding: 0.5rem 1.5rem 1rem; display: flex; flex-direction: column; gap: 6px; }
 .routes-loading, .routes-empty { font-size: 0.8rem; color: var(--carbon-500); padding: 8px 0; }
-.route-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; }
+.route-row {
+  display: flex; align-items: center; gap: 10px; padding: 8px 6px;
+  text-decoration: none; border-radius: 8px;
+  transition: background var(--duration-fast) ease;
+}
+.route-row:hover { background: rgba(201,168,76,0.08); }
 .route-row i.pi-directions { color: var(--gold-500); }
 .route-name { flex: 1; font-size: 0.85rem; color: var(--carbon-200); }
+.route-price { font-size: 0.8rem; font-weight: 600; color: var(--gold-400); }
+.route-stops {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 0.75rem; color: var(--carbon-400);
+}
 .route-remove {
   background: none; border: none; color: var(--carbon-500); cursor: pointer; padding: 4px;
 }

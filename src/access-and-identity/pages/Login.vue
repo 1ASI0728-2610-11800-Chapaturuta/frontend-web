@@ -63,7 +63,7 @@
           <transition name="fade">
             <div v-if="error" class="error-banner">
               <i class="pi pi-exclamation-circle"></i>
-              {{ t(error) }}
+              {{ error }}
             </div>
           </transition>
 
@@ -90,6 +90,7 @@ import { useI18n } from 'vue-i18n'
 import { APP_ROUTES } from '@/shared/services/routes.js'
 import { AuthService } from '@/access-and-identity/services/auth.service.js'
 import { DriverService } from '@/driver/services/driver.service.js'
+import { extractApiError } from '@/shared/services/api-error.js'
 
 const { t, locale } = useI18n()
 
@@ -150,7 +151,7 @@ async function handleLogin() {
 
   } catch (err) {
     console.error('Login error:', err)
-    error.value = 'login.error'
+    error.value = err?.friendlyMessage || extractApiError(err, t('login.error'))
   } finally {
     isLoading.value = false
   }

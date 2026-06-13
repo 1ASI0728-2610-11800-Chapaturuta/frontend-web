@@ -2,7 +2,8 @@ export const APP_ROUTES = {
     PUBLIC: {
         ROOT: "",
 
-        ROUTES: "routes/:routeId"
+        ROUTES: "routes/:routeId",
+        PAYMENT_SUCCESS: "pago-exitoso"
     },
     AUTH:{
         ROOT: 'auth',

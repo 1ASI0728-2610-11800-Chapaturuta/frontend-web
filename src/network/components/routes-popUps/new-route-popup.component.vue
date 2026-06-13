@@ -1,9 +1,10 @@
 <script setup>
-import {onMounted, ref, watch, computed} from 'vue';
+import {onMounted, ref, watch, computed, reactive} from 'vue';
 import {StopService} from "@/network/services/stop.service.js";
 import {RouteService} from "@/network/services/route.service.js";
 import NewSchedulePopup from '../schedule-popUps/new-schedule-popup.component.vue'
 import { getDriverId } from "@/shared/services/session.service.js";
+import { positiveNumber } from "@/shared/validation/validators.js";
 
 // Definición de props/emits (más explícito)
 const emit = defineEmits(['update:value', 'created']);
@@ -60,16 +61,25 @@ const loadSelects = async () => {
     loading.value = false;
   }
 }
-const isFormValid = computed(() => {
-  const form = routeForm.value;
-  return (
-      form.duration > 0 &&
-      form.price > 0 &&
-      form.frequency > 0 &&
-      form.selectedFirstStop !== null &&
-      form.selectedSecondStop !== null
-  );
+const touched = reactive({ origin: false, destination: false, duration: false, price: false, frequency: false });
+const showErrors = ref(false);
+
+const fieldErrors = computed(() => {
+  const f = routeForm.value;
+  return {
+    origin: f.selectedFirstStop === null ? 'Selecciona el primer paradero.' : '',
+    destination: f.selectedSecondStop === null
+      ? 'Selecciona el segundo paradero.'
+      : (f.selectedSecondStop === f.selectedFirstStop ? 'El destino debe ser distinto al origen.' : ''),
+    duration: positiveNumber(f.duration, 'La duración'),
+    price: positiveNumber(f.price, 'El precio'),
+    frequency: positiveNumber(f.frequency, 'La frecuencia'),
+  };
 });
+
+const showErr = (field) => (touched[field] || showErrors.value) ? fieldErrors.value[field] : '';
+
+const isFormValid = computed(() => Object.values(fieldErrors.value).every((e) => !e));
 
 watch(() => routeForm.value.selectedFirstStop, (newValue) => {
   routeForm.value.selectedSecondStop = null;
@@ -93,6 +103,7 @@ const resetForm = ()=>{
 }
 
 const handleContinue = () =>{
+  showErrors.value = true;
   if(!isFormValid.value) return;
 
   visiblePopupRoute.value = false;
@@ -117,29 +128,45 @@ onMounted(()=>{
         <h1 class="title">Nueva Ruta</h1>
       </template>
         <div class="form-container">
-          <pb-IftaLabel class="labelSelectField">
-            <pb-Select inputId="stop_a" v-model="routeForm.selectedFirstStop" :options="stops_origin" option-label="label" option-value="value" class="input-field"/>
-            <label for="stop_a">Primer paradero</label>
-          </pb-IftaLabel>
-          <pb-IftaLabel class="labelSelectField">
-            <pb-Select inputId="stop_b" v-model="routeForm.selectedSecondStop" :options="stops_destination" option-label="label" option-value="value" class="input-field" :disabled="!routeForm.selectedFirstStop"/>
-            <label for="stop_b">Segundo paradero</label>
-          </pb-IftaLabel>
+          <div class="field-block">
+            <pb-IftaLabel class="labelSelectField">
+              <pb-Select inputId="stop_a" v-model="routeForm.selectedFirstStop" :options="stops_origin" option-label="label" option-value="value" class="input-field" @blur="touched.origin = true"/>
+              <label for="stop_a">Primer paradero</label>
+            </pb-IftaLabel>
+            <small v-if="showErr('origin')" class="field-error">{{ showErr('origin') }}</small>
+          </div>
 
-          <pb-IftaLabel class="labelSelectField">
-            <pb-InputNumber id="duration" v-model="routeForm.duration" class="input-field"/>
-            <label for="duration">Duración (en minutos)</label>
-          </pb-IftaLabel>
+          <div class="field-block">
+            <pb-IftaLabel class="labelSelectField">
+              <pb-Select inputId="stop_b" v-model="routeForm.selectedSecondStop" :options="stops_destination" option-label="label" option-value="value" class="input-field" :disabled="!routeForm.selectedFirstStop" @blur="touched.destination = true"/>
+              <label for="stop_b">Segundo paradero</label>
+            </pb-IftaLabel>
+            <small v-if="showErr('destination')" class="field-error">{{ showErr('destination') }}</small>
+          </div>
 
-          <pb-IftaLabel class="labelSelectField">
-            <pb-InputNumber id="price" v-model="routeForm.price" class="input-field"/>
-            <label for="price">Precio (soles)</label>
-          </pb-IftaLabel>
+          <div class="field-block">
+            <pb-IftaLabel class="labelSelectField">
+              <pb-InputNumber id="duration" v-model="routeForm.duration" class="input-field" @blur="touched.duration = true"/>
+              <label for="duration">Duración (en minutos)</label>
+            </pb-IftaLabel>
+            <small v-if="showErr('duration')" class="field-error">{{ showErr('duration') }}</small>
+          </div>
 
-          <pb-IftaLabel class="labelSelectField">
-            <pb-InputNumber id="frequency" v-model="routeForm.frequency" class="input-field"/>
-            <label for="frequency">Frecuencia de salida (en minutos)</label>
-          </pb-IftaLabel>
+          <div class="field-block">
+            <pb-IftaLabel class="labelSelectField">
+              <pb-InputNumber id="price" v-model="routeForm.price" class="input-field" @blur="touched.price = true"/>
+              <label for="price">Precio (soles)</label>
+            </pb-IftaLabel>
+            <small v-if="showErr('price')" class="field-error">{{ showErr('price') }}</small>
+          </div>
+
+          <div class="field-block">
+            <pb-IftaLabel class="labelSelectField">
+              <pb-InputNumber id="frequency" v-model="routeForm.frequency" class="input-field" @blur="touched.frequency = true"/>
+              <label for="frequency">Frecuencia de salida (en minutos)</label>
+            </pb-IftaLabel>
+            <small v-if="showErr('frequency')" class="field-error">{{ showErr('frequency') }}</small>
+          </div>
 
           <div class="button-container">
             <pb-Button label="Cancelar" icon="pi pi-times"
@@ -151,9 +178,7 @@ onMounted(()=>{
             <pb-Button label="Continuar"
                        icon="pi pi-check"
                        class="create-button"
-                       :disabled="!isFormValid"
                        @click="handleContinue"/>
-<!-- :disabled="!isFormValid && !submitted"            -->
           </div>
         </div>
   </pb-Dialog>
@@ -217,8 +242,11 @@ onMounted(()=>{
 .form-container {
   display: flex;
   flex-direction: column;
-  gap: 30px;
+  gap: 22px;
 }
+
+.field-block { display: flex; flex-direction: column; gap: 4px; }
+.field-error { color: #e5484d; font-size: 12px; padding-left: 4px; }
 
 .title{
   color: var(--color-primary);

@@ -5,6 +5,7 @@ import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import { getMapConfig } from '@/shared/services/map-config.service.js'
 import { reverseGeocode, buildAddress } from '@/shared/services/reverse-geocode.service.js'
+import { isWithinPeru } from '@/shared/constants/peru-bounds.js'
 import { useToast } from 'primevue/usetoast'
 
 // Fix default icon path (Vite + Leaflet)
@@ -36,9 +37,14 @@ watch(() => props.modelValue, v => {
   marker.value = v ? [v.lat, v.lng] : null
 })
 
+function rejectOutsidePeru() {
+  toast?.add({ severity: 'warn', summary: 'Fuera de Perú', detail: 'Solo puedes fijar ubicaciones dentro de Perú.', life: 4000 })
+}
+
 function onMapClick(e) {
   const lat = +e.latlng.lat.toFixed(6)
   const lng = +e.latlng.lng.toFixed(6)
+  if (!isWithinPeru(lat, lng)) { rejectOutsidePeru(); return }
   marker.value = [lat, lng]
   emit('update:modelValue', { lat, lng })
 }
@@ -47,6 +53,12 @@ function onMarkerDrag(e) {
   const ll = e.target.getLatLng()
   const lat = +ll.lat.toFixed(6)
   const lng = +ll.lng.toFixed(6)
+  if (!isWithinPeru(lat, lng)) {
+    rejectOutsidePeru()
+    // revertir el marcador a la última posición válida del modelo
+    marker.value = props.modelValue ? [props.modelValue.lat, props.modelValue.lng] : null
+    return
+  }
   marker.value = [lat, lng]
   emit('update:modelValue', { lat, lng })
 }
@@ -69,12 +81,13 @@ function useMyLocation() {
     p => {
       const lat = +p.coords.latitude.toFixed(6)
       const lng = +p.coords.longitude.toFixed(6)
+      locating.value = false
+      if (!isWithinPeru(lat, lng)) { rejectOutsidePeru(); return }
       marker.value = [lat, lng]
       center.value = [lat, lng]
       zoom.value = 16
       emit('update:modelValue', { lat, lng })
       emitAddress(lat, lng)
-      locating.value = false
     },
     err => {
       locating.value = false

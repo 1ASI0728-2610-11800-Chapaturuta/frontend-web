@@ -120,16 +120,18 @@
       :style="{ width: '26rem' }"
     >
       <div v-if="selectedPayment" class="refund-form">
-        <label class="refund-label">Monto</label>
+        <label class="refund-label">Monto (máx. S/ {{ Number(selectedPayment.amount).toFixed(2) }})</label>
         <input v-model="refundAmount" type="number" min="0" step="0.01" class="refund-input" />
         <label class="refund-label">Motivo</label>
         <input v-model="refundReason" type="text" class="refund-input" placeholder="Motivo del reembolso" />
+        <small v-if="refundError" class="refund-error">{{ refundError }}</small>
       </div>
       <template #footer>
         <pb-Button label="Cancelar" text @click="showRefund = false" />
         <pb-Button
           label="Reembolsar"
           icon="pi pi-check"
+          :disabled="!!refundError"
           :loading="actingId === selectedPayment?.id"
           @click="submitRefund"
         />
@@ -139,10 +141,11 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, computed } from 'vue'
 import { useToast } from 'primevue/usetoast'
 import { PaymentService, RefundService } from '@/payments/services/payment.service.js'
 import PayuCardForm from '@/payments/components/payu-card-form.component.vue'
+import { required, maxAmount } from '@/shared/validation/validators.js'
 import { getUserId } from '@/shared/services/session.service.js'
 
 const service = new PaymentService()
@@ -161,6 +164,11 @@ const refundsByPayment = ref({})
 const showRefund = ref(false)
 const refundAmount = ref(0)
 const refundReason = ref('')
+
+const refundError = computed(() => {
+  const max = selectedPayment.value?.amount ?? 0
+  return maxAmount(refundAmount.value, max, 'El monto') || required(refundReason.value, 'El motivo')
+})
 
 function isPending(status) {
   return String(status || '').toLowerCase() === 'pending'
@@ -196,6 +204,10 @@ function openRefund(payment) {
 async function submitRefund() {
   const payment = selectedPayment.value
   if (!payment) return
+  if (refundError.value) {
+    toast.add({ severity: 'warn', summary: 'Revisa el reembolso', detail: refundError.value, life: 3500 })
+    return
+  }
   actingId.value = payment.id
   try {
     await service.createRefund(payment.id, { amount: refundAmount.value, reason: refundReason.value })
@@ -204,7 +216,7 @@ async function submitRefund() {
     await loadRefunds(payment, true)
     await load()
   } catch (err) {
-    toast.add({ severity: 'error', summary: 'Error', detail: err?.data?.message || err?.message || 'No se pudo crear el reembolso', life: 4000 })
+    toast.add({ severity: 'error', summary: 'Error', detail: err?.friendlyMessage || err?.data?.message || err?.message || 'No se pudo crear el reembolso', life: 4000 })
   } finally {
     actingId.value = null
   }
@@ -358,6 +370,7 @@ onMounted(load)
   border-radius: 8px; color: var(--carbon-100); font-size: 0.9rem;
 }
 .refund-input:focus { outline: none; border-color: var(--gold-500); }
+.refund-error { color: var(--danger); font-size: 0.78rem; margin-top: 4px; }
 .meta-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; border-top: 1px solid var(--carbon-700); padding-top: 1rem; }
 .meta-grid div { display: flex; flex-direction: column; gap: 2px; }
 .meta-grid span { color: var(--carbon-500); font-size: 11px; text-transform: uppercase; }

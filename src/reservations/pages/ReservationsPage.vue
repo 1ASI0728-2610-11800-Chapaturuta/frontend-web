@@ -28,6 +28,12 @@
           <span class="status-badge" :class="statusClass(r.status)">{{ statusLabel(r.status) }}</span>
           <div class="res-actions">
             <button
+              v-if="canPay(r)"
+              class="act-btn act-pay"
+              :disabled="acting === r.id"
+              @click="openPay(r)"
+            ><i class="pi pi-wallet"></i> Pagar</button>
+            <button
               v-if="canCancel(r.status)"
               class="act-btn act-cancel"
               :disabled="acting === r.id"
@@ -37,6 +43,16 @@
         </div>
       </article>
     </div>
+
+    <PaymentCheckoutDialog
+      v-model="showPay"
+      title="Pagar reserva"
+      :amount="payAmount"
+      :payment-id="payPaymentId"
+      :method="payMethod"
+      success-message="Tu reserva fue pagada y confirmada."
+      @paid="onPaid"
+    />
   </div>
 </template>
 
@@ -44,14 +60,44 @@
 import { ref, onMounted } from 'vue'
 import { useToast } from 'primevue/usetoast'
 import { ReservationService } from '@/reservations/services/reservation.service.js'
+import { PaymentService } from '@/payments/services/payment.service.js'
+import PaymentCheckoutDialog from '@/payments/components/payment-checkout-dialog.component.vue'
 import { getUserId } from '@/shared/services/session.service.js'
 
 const svc = new ReservationService()
+const paymentSvc = new PaymentService()
 const toast = useToast()
 const reservations = ref([])
 const loading = ref(false)
 const error = ref('')
 const acting = ref(null)
+
+const showPay = ref(false)
+const payPaymentId = ref(null)
+const payMethod = ref('')
+const payAmount = ref(0)
+
+const canPay = (r) => normalizeStatus(r.status) === 'pending' && !!r.fkIdPayment
+
+async function openPay(reservation) {
+  acting.value = reservation.id
+  try {
+    const payment = await paymentSvc.getPaymentById(reservation.fkIdPayment)
+    payPaymentId.value = reservation.fkIdPayment
+    payMethod.value = payment?.method || 'Yape'
+    payAmount.value = Number(payment?.amount || 0)
+    showPay.value = true
+  } catch (err) {
+    toast.add({ severity: 'error', summary: 'Error', detail: err?.data?.message || 'No se pudo cargar el pago.', life: 4000 })
+  } finally {
+    acting.value = null
+  }
+}
+
+async function onPaid() {
+  toast.add({ severity: 'success', summary: 'Reserva pagada', life: 2500 })
+  await load()
+}
 
 const normalizeStatus = (s) => String(s ?? '').toLowerCase().replace(/[\s_]/g, '')
 const statusClass = (s) => ({
@@ -144,4 +190,5 @@ onMounted(load)
 }
 .act-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .act-cancel { background: rgba(248,113,113,0.12); color: var(--danger); border-color: rgba(248,113,113,0.3); }
+.act-pay    { background: rgba(201,168,76,0.14); color: var(--gold-400); border-color: rgba(201,168,76,0.35); }
 </style>

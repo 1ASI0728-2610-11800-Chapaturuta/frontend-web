@@ -27,8 +27,8 @@
           <input v-model.trim="driver.phone" placeholder="999999999" />
         </label>
         <label class="field full">
-          <span>Foto URL</span>
-          <input v-model.trim="driver.photoUrl" placeholder="https://..." />
+          <span>Foto del conductor (opcional)</span>
+          <ImageDropzone v-model="photoFile" />
         </label>
       </div>
 
@@ -94,6 +94,7 @@ import { DriverService } from '@/driver/services/driver.service.js'
 import { DriverValidator } from '@/driver/services/driver.validator.js'
 import { Driver, LICENSE_CATEGORIES, VEHICLE_TYPES } from '@/driver/models/driver.entity.js'
 import { getCurrentUser, saveCurrentUser } from '@/shared/services/session.service.js'
+import ImageDropzone from '@/shared/components/ImageDropzone.vue'
 
 const router = useRouter()
 const service = new DriverService()
@@ -107,6 +108,7 @@ const driver = reactive(new Driver({
 const loading = ref(false)
 const apiError = ref('')
 const errors = ref([])
+const photoFile = ref(null)
 
 async function submit() {
   errors.value = DriverValidator.validateProfile(driver)
@@ -116,10 +118,19 @@ async function submit() {
   loading.value = true
   try {
     const created = await service.createDriver(driver)
+    // Foto opcional: subir el archivo al endpoint dedicado tras crear el perfil.
+    // Un fallo aquí no debe bloquear el onboarding (el driver ya quedó creado).
+    if (photoFile.value) {
+      try {
+        await service.uploadPhoto(created.id, photoFile.value)
+      } catch (photoErr) {
+        console.warn('No se pudo subir la foto del conductor:', photoErr)
+      }
+    }
     saveCurrentUser({ ...user, role: 2, driverId: created.id })
     await router.push('/driver/home')
   } catch (err) {
-    apiError.value = err?.data?.message || err?.message || 'No se pudo crear el perfil de conductor'
+    apiError.value = err?.friendlyMessage || err?.data?.message || err?.message || 'No se pudo crear el perfil de conductor'
   } finally {
     loading.value = false
   }

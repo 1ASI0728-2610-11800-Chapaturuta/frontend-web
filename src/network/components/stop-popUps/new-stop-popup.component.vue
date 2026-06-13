@@ -41,17 +41,24 @@ export default {
       submitted: false,
       isUploading: false,
       geocoding: false,
+      outsidePeru: false,
       _lastGeocoded: null
     };
   },
 
   computed: {
     isFormValid() {
-      return this.paradero.name &&
-          this.paradero.address &&
-          this.paradero.reference &&
-          this.paradero.fk_id_district &&
-          this.coords && this.coords.lat != null && this.coords.lng != null;
+      return !this.firstValidationError;
+    },
+    // Devuelve el primer campo faltante con un mensaje explicativo, o '' si todo OK.
+    firstValidationError() {
+      if (!this.paradero.name) return 'Ingresa el nombre del paradero.';
+      if (!this.paradero.address) return 'Ingresa la dirección.';
+      if (!this.paradero.reference) return 'Ingresa una referencia.';
+      if (!this.paradero.fk_id_district) return 'Selecciona el distrito.';
+      if (!this.coords || this.coords.lat == null || this.coords.lng == null) return 'Marca la ubicación en el mapa.';
+      if (this.outsidePeru) return 'La ubicación debe estar dentro de Perú.';
+      return '';
     },
   },
 
@@ -148,6 +155,25 @@ export default {
         const result = await reverseGeocode(coords.lat, coords.lng);
         if (!result || !result.address) return;
 
+        // Validación fina de país: solo Perú (country_code === 'pe').
+        const countryCode = (result.country_code ?? result.address?.country_code ?? '').toLowerCase();
+        if (countryCode && countryCode !== 'pe') {
+          this.outsidePeru = true;
+          this.coords = null;
+          this.paradero.latitude = null;
+          this.paradero.longitude = null;
+          this.selectedDistrict = null;
+          this.paradero.fk_id_district = '';
+          this.$toast.add({
+            severity: 'error',
+            summary: 'Ubicación inválida',
+            detail: 'Solo puedes crear paraderos dentro de Perú.',
+            life: 4000
+          });
+          return;
+        }
+        this.outsidePeru = false;
+
         const address = buildAddress(result.address);
         if (address) {
           this.paradero.address = address;
@@ -221,9 +247,9 @@ export default {
       if (!this.isFormValid) {
         this.$toast.add({
           severity: 'warn',
-          summary: 'Advertencia',
-          detail: 'Por favor completa todos los campos requeridos',
-          life: 3000
+          summary: 'Falta completar',
+          detail: this.firstValidationError,
+          life: 3500
         });
         return;
       }
@@ -254,9 +280,9 @@ export default {
       } catch (err) {
         this.$toast.add({
           severity: 'error',
-          summary: 'Error',
-          detail: `Error al crear paradero: ${err.message}`,
-          life: 3000
+          summary: 'No se pudo crear el paradero',
+          detail: err.friendlyMessage || err.message,
+          life: 4000
         });
       } finally {
         this.isUploading = false;
@@ -278,6 +304,7 @@ export default {
       this.coords = null;
       this._lastGeocoded = null;
       this.geocoding = false;
+      this.outsidePeru = false;
       this.selectedDistrict = null;
       this.districtSuggestions = [];
       this.submitted = false;

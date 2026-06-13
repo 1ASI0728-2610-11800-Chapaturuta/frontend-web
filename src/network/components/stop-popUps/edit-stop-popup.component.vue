@@ -107,9 +107,9 @@ export default {
       } catch (err) {
         this.$toast.add({
           severity: 'error',
-          summary: 'Error',
-          detail: `Error al actualizar paradero: ${err.message}`,
-          life: 3000
+          summary: 'No se pudo actualizar el paradero',
+          detail: err.friendlyMessage || err.message,
+          life: 4000
         });
       }
     },
