@@ -36,6 +36,30 @@ export class TripService extends BaseService {
     return response.data
   }
 
+  // Driver publishes a shared trip for a route with N seats of capacity.
+  async publishTrip({ fkIdRoute, fkIdOriginStop, fkIdDestinationStop, price, seats, fkIdDriver }) {
+    const user = JSON.parse(localStorage.getItem('user') || '{}')
+    const response = await this.http.post(`${this.resourcePath()}/publish`, {
+      fkIdUser: user.id,
+      fkIdDriver,
+      fkIdRoute,
+      fkIdOriginStop,
+      fkIdDestinationStop,
+      price,
+      seats: Number(seats)
+    })
+    return response.data
+  }
+
+  // Published trips a passenger can still board (pending + free seats). routeId narrows to one route.
+  async getJoinableTrips(routeId = null) {
+    const url = routeId != null
+      ? `${this.resourcePath()}/joinable?routeId=${routeId}`
+      : `${this.resourcePath()}/joinable`
+    const response = await this.http.get(url)
+    return response.data
+  }
+
   // Pending trips with no driver assigned — the pool a driver can claim.
   async getAvailableTrips() {
     const response = await this.http.get(`${this.resourcePath()}/available`)

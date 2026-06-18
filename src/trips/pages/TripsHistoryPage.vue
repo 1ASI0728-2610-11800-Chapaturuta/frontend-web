@@ -27,6 +27,7 @@
         </div>
         <div class="trip-meta">
           <span class="status-badge" :class="statusClass(trip.status)">{{ statusLabel(trip.status) }}</span>
+          <span v-if="trip.availableSeats != null" class="status-badge st-seats"><i class="pi pi-users"></i> {{ trip.availableSeats }} asientos</span>
           <span v-if="isPaid(trip)" class="status-badge st-paid"><i class="pi pi-check-circle"></i> Pagado</span>
           <span class="trip-date">{{ formatDateTime(trip.startTime || trip.date) }}</span>
           <span class="trip-price">S/ {{ trip.price }}</span>
@@ -257,6 +258,8 @@ onMounted(load)
 .st-cancelled { background: rgba(248,113,113,0.15); color: var(--danger); }
 .st-paid { background: rgba(74,222,128,0.18); color: var(--success); display: inline-flex; align-items: center; gap: 4px; }
 .st-paid i { font-size: 0.72rem; }
+.st-seats { background: rgba(96,165,250,0.15); color: #60a5fa; display: inline-flex; align-items: center; gap: 4px; }
+.st-seats i { font-size: 0.72rem; }
 
 .trip-actions { display: flex; gap: 6px; margin-top: 4px; }
 .act-btn {

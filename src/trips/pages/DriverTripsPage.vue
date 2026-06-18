@@ -2,8 +2,32 @@
   <div class="trips-page">
     <div class="page-header">
       <h1 class="page-title">Gestión de <span class="gold">Viajes</span></h1>
-      <p class="page-sub">Toma viajes disponibles, inícialos y complétalos</p>
+      <p class="page-sub">Publica viajes con asientos, tómalos, inícialos y complétalos</p>
     </div>
+
+    <!-- PUBLICAR VIAJE -->
+    <section class="block publish-block">
+      <h2 class="block-title"><i class="pi pi-megaphone"></i> Publicar viaje</h2>
+      <div class="publish-form">
+        <div class="pf-field">
+          <label>Ruta</label>
+          <select v-model="publishRouteId" class="pf-input">
+            <option :value="null" disabled>Selecciona una ruta…</option>
+            <option v-for="r in routes" :key="r.id" :value="r.id">
+              {{ routeOptionLabel(r) }}
+            </option>
+          </select>
+        </div>
+        <div class="pf-field seats">
+          <label>Asientos</label>
+          <input v-model.number="publishSeats" type="number" min="1" max="60" class="pf-input" />
+        </div>
+        <button class="act-btn act-start pf-btn" :disabled="publishing || !publishRouteId || publishSeats < 1" @click="publish">
+          <i class="pi pi-megaphone"></i> {{ publishing ? 'Publicando…' : 'Publicar' }}
+        </button>
+      </div>
+      <p v-if="!routes.length && !loadingRoutes" class="pf-hint">No tienes rutas. Crea una en "Rutas" primero.</p>
+    </section>
 
     <!-- VIAJES DISPONIBLES -->
     <section class="block">
@@ -25,6 +49,7 @@
           </div>
           <div class="trip-meta">
             <span class="status-badge st-pending">{{ statusLabel(trip.status) }}</span>
+            <span class="seats-badge"><i class="pi pi-users"></i> {{ trip.availableSeats }} asientos</span>
             <span class="trip-date">{{ formatDateTime(trip.startTime) }}</span>
             <span class="trip-price">S/ {{ trip.price ?? '—' }}</span>
             <div class="trip-actions">
@@ -62,6 +87,7 @@
           </div>
           <div class="trip-meta">
             <span class="status-badge" :class="statusClass(trip.status)">{{ statusLabel(trip.status) }}</span>
+            <span class="seats-badge"><i class="pi pi-users"></i> {{ trip.availableSeats }} asientos</span>
             <span class="trip-date">{{ formatDateTime(trip.startTime) }}</span>
             <span class="trip-price">S/ {{ trip.price ?? '—' }}</span>
             <div class="trip-actions">
@@ -94,9 +120,11 @@
 import { ref, onMounted } from 'vue'
 import { useToast } from 'primevue/usetoast'
 import { TripService } from '@/trips/services/trip.service.js'
+import { RouteService } from '@/network/services/route.service.js'
 import { getDriverId } from '@/shared/services/session.service.js'
 
 const svc = new TripService()
+const routeSvc = new RouteService()
 const toast = useToast()
 
 const available = ref([])
@@ -104,6 +132,63 @@ const mine = ref([])
 const loadingAvailable = ref(false)
 const loadingMine = ref(false)
 const acting = ref(null)
+
+// Publicar viaje
+const routes = ref([])
+const loadingRoutes = ref(false)
+const publishRouteId = ref(null)
+const publishSeats = ref(4)
+const publishing = ref(false)
+
+const routeOptionLabel = (r) => {
+  const stops = r.stops || []
+  const origin = stops[0]?.name
+  const dest = stops[stops.length - 1]?.name
+  const path = origin && dest ? `${origin} → ${dest}` : `Ruta #${r.id}`
+  return `${path} · S/ ${r.price}`
+}
+
+const loadRoutes = async () => {
+  const driverId = getDriverId()
+  if (!driverId) return
+  loadingRoutes.value = true
+  try {
+    routes.value = await routeSvc.loadRoutesByDriverId(driverId)
+  } catch {
+    routes.value = []
+  } finally {
+    loadingRoutes.value = false
+  }
+}
+
+const publish = async () => {
+  const driverId = getDriverId()
+  const route = routes.value.find(r => r.id === publishRouteId.value)
+  if (!driverId || !route) return
+  const stops = route.stops || []
+  if (stops.length < 2) {
+    toast.add({ severity: 'warn', summary: 'Ruta inválida', detail: 'La ruta necesita origen y destino.', life: 4000 })
+    return
+  }
+  publishing.value = true
+  try {
+    await svc.publishTrip({
+      fkIdDriver: driverId,
+      fkIdRoute: route.id,
+      fkIdOriginStop: stops[0].id,
+      fkIdDestinationStop: stops[stops.length - 1].id,
+      price: route.price,
+      seats: publishSeats.value
+    })
+    toast.add({ severity: 'success', summary: 'Viaje publicado', detail: `${publishSeats.value} asientos disponibles`, life: 3000 })
+    publishRouteId.value = null
+    await load()
+  } catch (e) {
+    toast.add({ severity: 'error', summary: 'Error', detail: e?.data?.message || e?.friendlyMessage || 'No se pudo publicar el viaje.', life: 4000 })
+  } finally {
+    publishing.value = false
+  }
+}
 
 const originLabel = (t) => t.originName || t.origin || ''
 const destinationLabel = (t) => t.destinationName || t.destination || ''
@@ -149,7 +234,7 @@ const loadMine = async () => {
   }
 }
 
-const load = async () => { await Promise.all([loadAvailable(), loadMine()]) }
+const load = async () => { await Promise.all([loadAvailable(), loadMine(), loadRoutes()]) }
 
 const takeTrip = async (trip) => {
   const driverId = getDriverId()
@@ -227,6 +312,18 @@ onMounted(load)
 .st-cancelled { background: rgba(248,113,113,0.15); color: #f87171; }
 .trip-date { font-size: 0.75rem; color: var(--carbon-500); }
 .trip-price { font-size: 0.95rem; font-weight: 700; color: var(--gold-500); }
+.seats-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 0.75rem; font-weight: 600; color: #60a5fa; background: rgba(96,165,250,0.12); padding: 2px 8px; border-radius: 999px; }
+
+/* Publicar viaje */
+.publish-block { background: var(--carbon-850, #1a1a1a); border: 1px solid var(--carbon-700); border-radius: var(--radius-md); padding: 1.1rem 1.25rem; }
+.publish-form { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
+.pf-field { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 200px; }
+.pf-field.seats { flex: 0 0 110px; min-width: 90px; }
+.pf-field label { font-size: 0.78rem; color: var(--carbon-400); }
+.pf-input { padding: 9px 12px; background: var(--carbon-800); border: 1px solid var(--carbon-700); border-radius: var(--radius-sm); color: var(--carbon-100); font-size: 0.9rem; font-family: var(--font-family); }
+.pf-input:focus { outline: none; border-color: var(--gold-500); }
+.pf-btn { white-space: nowrap; }
+.pf-hint { font-size: 0.8rem; color: var(--carbon-500); margin-top: 8px; }
 
 .trip-actions { display: flex; gap: 6px; margin-top: 4px; }
 .act-btn {

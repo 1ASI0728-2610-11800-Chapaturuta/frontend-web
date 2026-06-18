@@ -43,7 +43,10 @@ export default {
       reserveSeats: 1,
       reserveDocument: '',
       showCheckout: false,
-      checkoutAmount: 0
+      checkoutAmount: 0,
+      joinableTrips: [],
+      loadingJoinable: false,
+      selectedTripId: null
     };
   },
   computed: {
@@ -63,8 +66,18 @@ export default {
     driverName() {
       return this.route?.driverName ?? this.driverSummary?.name ?? this.driverSummary?.fullName ?? '';
     },
+    selectedTrip() {
+      return this.joinableTrips.find(t => t.id === this.selectedTripId) || null;
+    },
+    maxSeats() {
+      return this.selectedTrip?.availableSeats ?? 0;
+    },
     seatsError() {
-      return integerMin(this.reserveSeats, 1, 'Los asientos');
+      const base = integerMin(this.reserveSeats, 1, 'Los asientos');
+      if (base) return base;
+      if (this.selectedTrip && Number(this.reserveSeats) > this.maxSeats)
+        return `Solo quedan ${this.maxSeats} asiento(s) en este viaje.`;
+      return null;
     },
     dniError() {
       return dniRule(this.reserveDocument);
@@ -157,15 +170,31 @@ export default {
         { timeout: 8000 }
       );
     },
-    openReserve() {
+    async openReserve() {
       this.reserveSeats = 1;
       this.reserveDocument = '';
+      this.selectedTripId = null;
       this.showReserve = true;
+      await this.loadJoinableTrips();
+    },
+    // Trae los viajes PUBLICADOS por conductores para esta ruta (con asientos libres).
+    async loadJoinableTrips() {
+      if (!this.route?.id) return;
+      this.loadingJoinable = true;
+      try {
+        this.joinableTrips = await this.tripService.getJoinableTrips(this.route.id);
+        // Preselecciona el primero para agilizar.
+        if (this.joinableTrips.length) this.selectedTripId = this.joinableTrips[0].id;
+      } catch {
+        this.joinableTrips = [];
+      } finally {
+        this.loadingJoinable = false;
+      }
     },
     // Valida y abre el checkout (el pago se hace ANTES de confirmar la reserva).
     confirmReserve() {
-      if (!this.route || !this.originStop || !this.destinationStop) {
-        this.$toast?.add({ severity: 'warn', summary: 'Sin datos', detail: 'La ruta no tiene paraderos válidos.', life: 3000 });
+      if (!this.selectedTrip) {
+        this.$toast?.add({ severity: 'warn', summary: 'Elige un viaje', detail: 'Selecciona un viaje publicado para reservar.', life: 3500 });
         return;
       }
       const err = this.seatsError || this.dniError;
@@ -173,23 +202,16 @@ export default {
         this.$toast?.add({ severity: 'warn', summary: 'Revisa los datos', detail: err, life: 3500 });
         return;
       }
-      this.checkoutAmount = Number(this.route.price || 0) * Number(this.reserveSeats || 1);
+      const unitPrice = Number(this.selectedTrip.price ?? this.route.price ?? 0);
+      this.checkoutAmount = unitPrice * Number(this.reserveSeats || 1);
       this.showReserve = false;
       this.showCheckout = true;
     },
-    // Crea el viaje + la reserva con el metodo elegido; devuelve el id del pago para el checkout.
+    // Se UNE al viaje compartido elegido (descuenta sus asientos); devuelve el id del pago.
     async reservePayProvider(method) {
-      const trip = await this.tripService.createTrip({
-        fkIdRoute: this.route.id,
-        fkIdOriginStop: this.originStop.id,
-        fkIdDestinationStop: this.destinationStop.id,
-        price: this.route.price,
-        availableSeats: Number(this.reserveSeats)
-      });
-      const tripId = trip?.id ?? trip?.tripId;
       const reservation = await this.reservationService.createReservation({
         fkIdUser: this.user.id,
-        fkIdTrip: tripId,
+        fkIdTrip: this.selectedTrip.id,
         documentType: 'Dni',
         documentNumber: this.reserveDocument,
         seats: this.reserveSeats,
@@ -206,6 +228,12 @@ export default {
       const hours = Math.floor(minutes / 60);
       const mins = minutes % 60;
       return hours > 0 ? `${hours}h ${mins > 0 ? mins + 'min' : ''}` : `${mins}min`;
+    },
+    formatTripWhen(value) {
+      if (!value) return '';
+      try {
+        return new Date(value).toLocaleString('es-PE', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+      } catch { return String(value); }
     },
     async bookTrip() {
       if (!this.route || !this.originStop || !this.destinationStop) {
@@ -378,15 +406,44 @@ export default {
       :style="{ width: '24rem' }"
     >
       <div class="picker-body">
-        <label class="picker-label">Asientos</label>
-        <input v-model.number="reserveSeats" type="number" min="1" class="picker-select" />
-        <small v-if="seatsError" class="field-error">{{ seatsError }}</small>
-        <label class="picker-label">Número de documento (DNI)</label>
-        <input v-model="reserveDocument" type="text" inputmode="numeric" maxlength="8" class="picker-select" placeholder="Ej. 12345678" />
-        <small v-if="dniError" class="field-error">{{ dniError }}</small>
-        <p class="reserve-note">
-          <i class="pi pi-info-circle"></i>
-          La reserva se paga por adelantado. Elegirás el método (Yape, Plin o Tarjeta) en el siguiente paso.
+        <div v-if="loadingJoinable" class="reserve-loading">Buscando viajes disponibles…</div>
+
+        <template v-else-if="joinableTrips.length">
+          <label class="picker-label">Viaje disponible</label>
+          <div class="trip-options">
+            <label
+              v-for="t in joinableTrips"
+              :key="t.id"
+              class="trip-option"
+              :class="{ active: selectedTripId === t.id }"
+            >
+              <input type="radio" :value="t.id" v-model="selectedTripId" />
+              <span class="to-info">
+                <span class="to-driver"><i class="pi pi-user"></i> {{ t.driverName }}</span>
+                <span class="to-when">{{ formatTripWhen(t.startTime) }}</span>
+              </span>
+              <span class="to-seats" :class="{ low: t.availableSeats <= 2 }">
+                <i class="pi pi-users"></i> {{ t.availableSeats }} libres
+              </span>
+            </label>
+          </div>
+
+          <label class="picker-label">Asientos <span v-if="selectedTrip" class="picker-hint">(máx. {{ maxSeats }})</span></label>
+          <input v-model.number="reserveSeats" type="number" min="1" :max="maxSeats" class="picker-select" />
+          <small v-if="seatsError" class="field-error">{{ seatsError }}</small>
+
+          <label class="picker-label">Número de documento (DNI)</label>
+          <input v-model="reserveDocument" type="text" inputmode="numeric" maxlength="8" class="picker-select" placeholder="Ej. 12345678" />
+          <small v-if="dniError" class="field-error">{{ dniError }}</small>
+
+          <p class="reserve-note">
+            <i class="pi pi-info-circle"></i>
+            La reserva se paga por adelantado. Elegirás el método (Yape, Plin o Tarjeta) en el siguiente paso.
+          </p>
+        </template>
+
+        <p v-else class="picker-empty">
+          No hay viajes publicados para esta ruta todavía. Un conductor debe publicar uno con asientos disponibles.
         </p>
       </div>
       <template #footer>
@@ -394,7 +451,7 @@ export default {
         <pb-Button
           label="Continuar al pago"
           icon="pi pi-arrow-right"
-          :disabled="!!seatsError || !!dniError"
+          :disabled="!joinableTrips.length || !selectedTrip || !!seatsError || !!dniError"
           @click="confirmReserve"
         />
       </template>
@@ -505,4 +562,21 @@ export default {
 .reserve-note { display: flex; gap: 6px; font-size: 0.78rem; color: var(--carbon-400); margin-top: 8px; }
 .reserve-note i { color: var(--gold-400); margin-top: 2px; }
 .field-error { color: #e5484d; font-size: 12px; }
+.picker-hint { color: var(--carbon-500); font-weight: 400; }
+.reserve-loading { font-size: 0.85rem; color: var(--carbon-400); padding: 12px 0; }
+.trip-options { display: flex; flex-direction: column; gap: 8px; margin-bottom: 6px; }
+.trip-option {
+  display: flex; align-items: center; gap: 10px; padding: 10px 12px; cursor: pointer;
+  background: var(--carbon-800); border: 1px solid var(--carbon-700); border-radius: var(--radius-md);
+}
+.trip-option.active { border-color: var(--gold-500); background: rgba(201,168,76,0.08); }
+.trip-option input { accent-color: var(--gold-500); }
+.to-info { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+.to-driver { font-size: 0.85rem; color: var(--carbon-100); display: inline-flex; align-items: center; gap: 5px; }
+.to-when { font-size: 0.75rem; color: var(--carbon-400); }
+.to-seats {
+  display: inline-flex; align-items: center; gap: 4px; font-size: 0.78rem; font-weight: 600;
+  color: #60a5fa; background: rgba(96,165,250,0.12); padding: 3px 9px; border-radius: 999px;
+}
+.to-seats.low { color: #fbbf24; background: rgba(251,191,36,0.14); }
 </style>
