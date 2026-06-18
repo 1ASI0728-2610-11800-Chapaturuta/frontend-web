@@ -22,6 +22,12 @@
         <router-link :to="`/${APP_ROUTES.TRAVELLER.ROOT}/${APP_ROUTES.TRAVELLER.RESERVATIONS}`" class="nav-link">
           <i class="pi pi-ticket nav-icon"></i>Reservas
         </router-link>
+        <router-link :to="`/${APP_ROUTES.TRAVELLER.ROOT}/${APP_ROUTES.TRAVELLER.PAYMENTS}`" class="nav-link">
+          <i class="pi pi-wallet nav-icon"></i>Pagos
+        </router-link>
+        <router-link :to="`/${APP_ROUTES.TRAVELLER.ROOT}/${APP_ROUTES.TRAVELLER.PLANS}`" class="nav-link">
+          <i class="pi pi-star nav-icon"></i>Planes
+        </router-link>
         <router-link :to="`/${APP_ROUTES.TRAVELLER.ROOT}/${APP_ROUTES.TRAVELLER.PROFILE}`" class="nav-link">
           <i class="pi pi-user nav-icon"></i>Perfil
         </router-link>

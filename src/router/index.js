@@ -69,6 +69,16 @@ const routes = [
                 path: `${APP_ROUTES.TRAVELLER.ROOT}/${APP_ROUTES.TRAVELLER.ASSISTANT}`,
                 name: "TravelAssistant",
                 component: () => import('@/traveller/pages/TravelAssistantPage.vue')
+            },
+            {
+                path: `${APP_ROUTES.TRAVELLER.ROOT}/${APP_ROUTES.TRAVELLER.PAYMENTS}`,
+                name: "TravellerPayments",
+                component: PaymentsPage
+            },
+            {
+                path: `${APP_ROUTES.TRAVELLER.ROOT}/${APP_ROUTES.TRAVELLER.PLANS}`,
+                name: "TravellerPlans",
+                component: SubscriptionsPage
             }
         ]
     },

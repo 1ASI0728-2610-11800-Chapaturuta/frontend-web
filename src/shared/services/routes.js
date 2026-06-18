@@ -19,6 +19,8 @@ export const APP_ROUTES = {
         TRIPS: 'trips',
         RESERVATIONS: 'reservations',
         ASSISTANT: 'asistente',
+        PAYMENTS: 'payments',
+        PLANS: 'planes',
     },
     DRIVER:{
         ROOT: 'driver',
