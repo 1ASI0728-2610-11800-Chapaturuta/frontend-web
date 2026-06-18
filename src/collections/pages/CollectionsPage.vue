@@ -34,7 +34,7 @@
           <div class="col-icon"><i class="pi pi-bookmark-fill"></i></div>
           <div class="col-info">
             <h3>{{ col.name }}</h3>
-            <p>{{ col.routeCount ?? (routesByCol[col.id]?.length) ?? 0 }} rutas guardadas</p>
+            <p>{{ (routesByCol[col.id]?.length ?? col.itemCount) ?? 0 }} rutas guardadas</p>
           </div>
           <i class="pi col-arrow" :class="expanded === col.id ? 'pi-chevron-down' : 'pi-chevron-right'"></i>
         </div>

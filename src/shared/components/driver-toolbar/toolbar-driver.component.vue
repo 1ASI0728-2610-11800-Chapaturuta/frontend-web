@@ -9,6 +9,7 @@
       <nav class="header-nav">
         <router-link to="/driver/home" class="nav-link"><i class="pi pi-home nav-icon"></i>Inicio</router-link>
         <router-link to="/driver/dashboard" class="nav-link"><i class="pi pi-chart-bar nav-icon"></i>Dashboard</router-link>
+        <router-link to="/driver/trips" class="nav-link"><i class="pi pi-car nav-icon"></i>Viajes</router-link>
         <router-link to="/driver/stops" class="nav-link"><i class="pi pi-map-marker nav-icon"></i>Paraderos</router-link>
         <router-link to="/driver/routes" class="nav-link"><i class="pi pi-directions nav-icon"></i>Rutas</router-link>
         <router-link to="/driver/payments" class="nav-link"><i class="pi pi-wallet nav-icon"></i>Pagos</router-link>

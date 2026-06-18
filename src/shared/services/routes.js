@@ -27,6 +27,7 @@ export const APP_ROUTES = {
         DASHBOARD: 'dashboard',
         STOPS: 'stops',
         ROUTES: 'routes',
+        TRIPS: 'trips',
         INFORMATION: 'information',
         PAYMENTS: 'payments',
         SUBSCRIPTIONS: 'subscriptions'

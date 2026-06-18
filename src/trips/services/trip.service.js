@@ -36,6 +36,18 @@ export class TripService extends BaseService {
     return response.data
   }
 
+  // Pending trips with no driver assigned — the pool a driver can claim.
+  async getAvailableTrips() {
+    const response = await this.http.get(`${this.resourcePath()}/available`)
+    return response.data
+  }
+
+  // Driver claims a trip (sets its driver) so it appears in his history and can be started.
+  async assignDriver(id, driverId) {
+    const response = await this.http.post(`${this.resourcePath()}/${id}/assign-driver`, { driverId })
+    return response.data
+  }
+
   async startTrip(id) {
     const response = await this.http.post(`${this.resourcePath()}/${id}/start`)
     return response.data
