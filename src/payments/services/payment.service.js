@@ -22,13 +22,18 @@ export class PaymentService extends BaseService {
     return response.data
   }
 
+  // PayU sandbox + the synchronous payment-confirmation flow can take several seconds,
+  // well beyond the 5s default. Use a wider per-request timeout so the gateway round-trip
+  // isn't aborted client-side as a false "timeout".
   async chargePayU(paymentId, payload) {
-    const response = await this.http.post(`${this.resourcePath()}/payu/${paymentId}/charge`, payload)
+    const response = await this.http.post(
+      `${this.resourcePath()}/payu/${paymentId}/charge`, payload, { timeout: 30000 })
     return response.data
   }
 
   async confirmPayment(paymentId, externalReference = '') {
-    const response = await this.http.post(`${this.resourcePath()}/${paymentId}/confirm`, { externalReference })
+    const response = await this.http.post(
+      `${this.resourcePath()}/${paymentId}/confirm`, { externalReference }, { timeout: 30000 })
     return response.data
   }
 
