@@ -38,6 +38,7 @@
         <div>
           <strong>Tarjeta de prueba (sandbox PayU)</strong>
           <span>Nro: 4111 1111 1111 1111 · Venc: 12/29 · CVV: 123 · cualquier email/DNI</span>
+          <span>Titular = <strong>APPROVED</strong> para aprobar. El sandbox decide por el nombre (REJECTED → declinada, PENDING, ERROR).</span>
         </div>
       </div>
       <PayuCardForm
