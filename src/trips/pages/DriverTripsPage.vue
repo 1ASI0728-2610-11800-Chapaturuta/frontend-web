@@ -20,12 +20,15 @@
         </div>
         <div class="pf-field seats">
           <label>Asientos</label>
-          <input v-model.number="publishSeats" type="number" min="1" max="60" class="pf-input" />
+          <div class="pf-input pf-readonly" title="Capacidad de tu vehículo (registro)">
+            <i class="pi pi-users"></i> {{ vehicleCapacity ?? '—' }}
+          </div>
         </div>
-        <button class="act-btn act-start pf-btn" :disabled="publishing || !publishRouteId || publishSeats < 1" @click="publish">
+        <button class="act-btn act-start pf-btn" :disabled="publishing || !publishRouteId || !vehicleCapacity" @click="publish">
           <i class="pi pi-megaphone"></i> {{ publishing ? 'Publicando…' : 'Publicar' }}
         </button>
       </div>
+      <p class="pf-hint">Los asientos se toman de la capacidad de tu vehículo registrado. Para cambiarla, edita tu vehículo en tu perfil.</p>
       <p v-if="!routes.length && !loadingRoutes" class="pf-hint">No tienes rutas. Crea una en "Rutas" primero.</p>
     </section>
 
@@ -121,10 +124,12 @@ import { ref, onMounted } from 'vue'
 import { useToast } from 'primevue/usetoast'
 import { TripService } from '@/trips/services/trip.service.js'
 import { RouteService } from '@/network/services/route.service.js'
-import { getDriverId } from '@/shared/services/session.service.js'
+import { DriverService } from '@/driver/services/driver.service.js'
+import { getDriverId, getUserId } from '@/shared/services/session.service.js'
 
 const svc = new TripService()
 const routeSvc = new RouteService()
+const driverSvc = new DriverService()
 const toast = useToast()
 
 const available = ref([])
@@ -137,8 +142,20 @@ const acting = ref(null)
 const routes = ref([])
 const loadingRoutes = ref(false)
 const publishRouteId = ref(null)
-const publishSeats = ref(4)
+const vehicleCapacity = ref(null) // capacidad del vehículo registrado (única fuente de asientos)
 const publishing = ref(false)
+
+// Lee la capacidad del vehículo del perfil del conductor; es la fuente de asientos al publicar.
+const loadVehicleCapacity = async () => {
+  const userId = getUserId()
+  if (!userId) return
+  try {
+    const driver = await driverSvc.getDriverByUserId(userId)
+    vehicleCapacity.value = driver?.vehicleCapacity ?? driver?.vehicle?.capacity ?? driver?.capacity ?? null
+  } catch {
+    vehicleCapacity.value = null
+  }
+}
 
 const routeOptionLabel = (r) => {
   const stops = r.stops || []
@@ -172,15 +189,16 @@ const publish = async () => {
   }
   publishing.value = true
   try {
+    // El backend fija los asientos desde la capacidad del vehículo; enviamos la conocida solo informativa.
     await svc.publishTrip({
       fkIdDriver: driverId,
       fkIdRoute: route.id,
       fkIdOriginStop: stops[0].id,
       fkIdDestinationStop: stops[stops.length - 1].id,
       price: route.price,
-      seats: publishSeats.value
+      seats: vehicleCapacity.value
     })
-    toast.add({ severity: 'success', summary: 'Viaje publicado', detail: `${publishSeats.value} asientos disponibles`, life: 3000 })
+    toast.add({ severity: 'success', summary: 'Viaje publicado', detail: `${vehicleCapacity.value} asientos disponibles`, life: 3000 })
     publishRouteId.value = null
     await load()
   } catch (e) {
@@ -234,7 +252,7 @@ const loadMine = async () => {
   }
 }
 
-const load = async () => { await Promise.all([loadAvailable(), loadMine(), loadRoutes()]) }
+const load = async () => { await Promise.all([loadAvailable(), loadMine(), loadRoutes(), loadVehicleCapacity()]) }
 
 const takeTrip = async (trip) => {
   const driverId = getDriverId()
@@ -322,6 +340,7 @@ onMounted(load)
 .pf-field label { font-size: 0.78rem; color: var(--carbon-400); }
 .pf-input { padding: 9px 12px; background: var(--carbon-800); border: 1px solid var(--carbon-700); border-radius: var(--radius-sm); color: var(--carbon-100); font-size: 0.9rem; font-family: var(--font-family); }
 .pf-input:focus { outline: none; border-color: var(--gold-500); }
+.pf-readonly { display: inline-flex; align-items: center; gap: 6px; color: var(--gold-500); background: var(--carbon-900, #14151a); cursor: default; }
 .pf-btn { white-space: nowrap; }
 .pf-hint { font-size: 0.8rem; color: var(--carbon-500); margin-top: 8px; }
 

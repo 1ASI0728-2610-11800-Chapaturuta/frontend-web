@@ -17,22 +17,26 @@ export default {
       provinces: [],
       districts: [],
       routes:    [],
-      searchQuery: '',
+      searchQuery: { origin: '', destination: '' },
       isLoading: false,
       error:     null
     }
   },
   computed: {
     visibleRoutes() {
-      const query = this.searchQuery.trim().toLowerCase()
-      if (!query) return this.routes
-      const tokens = query.split(/\s+/).filter(Boolean)
+      const origin = (this.searchQuery.origin || '').trim().toLowerCase()
+      const dest   = (this.searchQuery.destination || '').trim().toLowerCase()
+      if (!origin && !dest) return this.routes
       return this.routes.filter(route => {
-        const haystack = (route.stops || [])
-          .map(s => `${s.name || ''} ${s.address || ''}`)
-          .join(' ')
-          .toLowerCase()
-        return tokens.every(token => haystack.includes(token))
+        const stops = route.stops || []
+        if (!stops.length) return false
+        const first = stops[0]
+        const last  = stops[stops.length - 1]
+        const firstText = `${first?.name || ''} ${first?.address || ''}`.toLowerCase()
+        const lastText  = `${last?.name || ''} ${last?.address || ''}`.toLowerCase()
+        const okOrigin = !origin || firstText.includes(origin)
+        const okDest   = !dest   || lastText.includes(dest)
+        return okOrigin && okDest
       })
     }
   },

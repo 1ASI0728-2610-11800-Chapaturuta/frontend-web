@@ -27,7 +27,11 @@
         </div>
         <div class="trip-meta">
           <span class="status-badge" :class="statusClass(trip.status)">{{ statusLabel(trip.status) }}</span>
-          <span v-if="trip.availableSeats != null" class="status-badge st-seats"><i class="pi pi-users"></i> {{ trip.availableSeats }} asientos</span>
+          <span v-if="trip.myReservationStatus" class="status-badge" :class="resvClass(trip.myReservationStatus)">
+            <i class="pi pi-ticket"></i> Reserva: {{ resvLabel(trip.myReservationStatus) }}
+          </span>
+          <span v-if="trip.myReservationSeats != null" class="status-badge st-seats"><i class="pi pi-user-plus"></i> {{ trip.myReservationSeats }} reservado(s)</span>
+          <span v-else-if="trip.availableSeats != null" class="status-badge st-seats"><i class="pi pi-users"></i> {{ trip.availableSeats }} asientos</span>
           <span v-if="isPaid(trip)" class="status-badge st-paid"><i class="pi pi-check-circle"></i> Pagado</span>
           <span class="trip-date">{{ formatDateTime(trip.startTime || trip.date) }}</span>
           <span class="trip-price">S/ {{ trip.price }}</span>
@@ -127,6 +131,26 @@ const statusLabel = (s) => ({
   completed: 'Completado',
   cancelled: 'Cancelado',
   canceled: 'Cancelado'
+}[normalizeStatus(s)] || (s || 'Pendiente'))
+
+// Estado de la reserva del propio pasajero sobre el viaje (separado del estado del viaje).
+const resvClass = (s) => ({
+  pending: 'st-pending',
+  confirmed: 'st-completed',
+  completed: 'st-completed',
+  cancelled: 'st-cancelled',
+  canceled: 'st-cancelled',
+  refunded: 'st-cancelled',
+  expired: 'st-cancelled'
+}[normalizeStatus(s)] || 'st-pending')
+const resvLabel = (s) => ({
+  pending: 'Pendiente de pago',
+  confirmed: 'Confirmada',
+  completed: 'Completada',
+  cancelled: 'Cancelada',
+  canceled: 'Cancelada',
+  refunded: 'Reembolsada',
+  expired: 'Expirada'
 }[normalizeStatus(s)] || (s || 'Pendiente'))
 
 const load = async () => {
