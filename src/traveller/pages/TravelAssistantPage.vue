@@ -3,7 +3,7 @@
     <div class="assistant-header">
       <div>
         <h1 class="title"><i class="pi pi-sparkles"></i> Asistente <span class="gold">IA</span></h1>
-        <p class="sub">Arma viajes con conexiones para llegar a donde no hay ruta directa.</p>
+        <p class="sub">Arma viajes con conexiones y responde tus dudas sobre rutas, paraderos, precios y horarios.</p>
       </div>
       <span v-if="ASSISTANT_ENABLED" class="premium-badge"><i class="pi pi-crown"></i> Premium</span>
       <span v-else class="soon-badge"><i class="pi pi-clock"></i> Próximamente</span>
@@ -47,7 +47,8 @@
       <div class="chat-window" ref="chatRef">
         <div v-if="messages.length === 0" class="chat-empty">
           <i class="pi pi-comments"></i>
-          <p>Pregúntame, por ejemplo: <em>"¿cómo llego de Surco a Comas?"</em></p>
+          <p>Pregúntame un viaje: <em>"¿cómo llego de Surco a Comas?"</em></p>
+          <p>O sobre la red: <em>"¿cuánto cuesta la ruta a Comas?"</em>, <em>"¿qué paraderos hay en Surco?"</em></p>
         </div>
 
         <div v-for="(m, i) in messages" :key="i" class="msg" :class="m.role">
@@ -136,10 +137,9 @@ import PaymentCheckoutDialog from '@/payments/components/payment-checkout-dialog
 import { getUserId } from '@/shared/services/session.service.js'
 import { dni as dniRule, integerMin } from '@/shared/validation/validators.js'
 
-// Feature flag: el Asistente IA está en evaluación (modelo/enfoque por definir).
-// En false muestra el mock-up "Próximamente". Cambiar a true cuando salga a producción
-// (debe ir alineado con "Assistant:Enabled" del backend).
-const ASSISTANT_ENABLED = false
+// Feature flag: alineado con "Assistant:Enabled" del backend.
+// En false muestra el mock-up "Próximamente"; en true habilita el chat (Premium).
+const ASSISTANT_ENABLED = true
 
 const { isPremium, loaded: premiumLoaded } = usePremiumStatus()
 const toast = useToast()
