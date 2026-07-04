@@ -188,8 +188,14 @@ const loadPaidTrips = async (userId) => {
 }
 
 const isPaid = (trip) => paidTripIds.value.has(Number(trip.id))
+// Si el pasajero ya tiene una reserva sobre este viaje, la reserva es el canal de
+// pago (se paga en "Mis Reservas"). No debe ofrecerse "Pagar viaje" o se cobraría
+// dos veces el mismo viaje (la reserva paga con referenceType 'Reservation', el
+// pago de viaje con 'Trip', por eso isPaid no lo detectaba).
+const hasReservation = (trip) =>
+  ['pending', 'confirmed', 'completed'].includes(normalizeStatus(trip.myReservationStatus))
 const canPay = (trip) =>
-  !isPaid(trip) && ['inprogress', 'completed'].includes(normalizeStatus(trip.status))
+  !isPaid(trip) && !hasReservation(trip) && ['inprogress', 'completed'].includes(normalizeStatus(trip.status))
 
 const openPay = (trip) => {
   payTrip.value = trip
