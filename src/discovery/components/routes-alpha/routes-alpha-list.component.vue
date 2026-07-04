@@ -30,9 +30,14 @@ export default {
       const svc = new DriverService()
       const results = await Promise.all(
         routes.map(async (route) => {
+          const firstStop = route.stops?.[0] || {}
+          // El backend expone el id del conductor como `fk_driver_id` (StopInRoutesResource).
+          const driverId = firstStop.fk_driver_id ?? firstStop.fkIdDriver ?? firstStop.fk_id_driver
+            ?? route.fkIdDriver ?? route.driverId
+          // Sin id de conductor no llamamos al backend (evita GET /drivers/undefined -> 404).
+          if (driverId == null) return { ...route, driverName: 'Conductor' }
           try {
-            const firstStop = route.stops?.[0] || {}
-            const driver = await svc.getById(firstStop.fkIdDriver || firstStop.fk_id_driver || firstStop.fk_company_id)
+            const driver = await svc.getById(driverId)
             const driverName = `${driver.firstName || ''} ${driver.lastName || ''}`.trim()
             return { ...route, driverName: driverName || 'Conductor' }
           } catch {
