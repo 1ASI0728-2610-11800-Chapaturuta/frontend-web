@@ -139,10 +139,10 @@ const coordsLabel = computed(() =>
 .map-picker-toolbar { display:flex; align-items:center; justify-content:space-between; gap:12px; }
 .coords { font-size:12px; color:var(--carbon-400); }
 .loc-btn {
-  background:rgba(201,168,76,0.1); border:1px solid rgba(201,168,76,0.3); color:var(--gold-400);
+  background:rgba(139,92,246,0.1); border:1px solid rgba(139,92,246,0.3); color:var(--gold-400);
   padding:6px 12px; border-radius:6px; cursor:pointer; font-size:12px; display:inline-flex; align-items:center; gap:6px;
 }
-.loc-btn:hover { background:rgba(201,168,76,0.2); }
+.loc-btn:hover { background:rgba(139,92,246,0.2); }
 .map-wrap { width:100%; border-radius:8px; overflow:hidden; border:1px solid var(--carbon-700); }
 .map-loading { display:flex; align-items:center; justify-content:center; height:100%; color:var(--carbon-400); }
 </style>

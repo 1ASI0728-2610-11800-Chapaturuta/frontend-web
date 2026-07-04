@@ -46,43 +46,29 @@ import '@/assets/styles/variables.css'
 // Router
 import router from './router'
 
-// Build CarbonGold theme on top of Aura
-const CarbonGold = definePreset(Aura, {
+// Build PurpleLight theme on top of Aura — light surfaces, light-purple primary.
+const PurpleLight = definePreset(Aura, {
   semantic: {
     primary: {
-      50:  '#F5ECD0',
-      100: '#F5ECD0',
-      200: '#E0C96E',
-      300: '#E0C96E',
-      400: '#D4B85C',
-      500: '#C9A84C',
-      600: '#B8943F',
-      700: '#9A7832',
-      800: '#7A5E27',
-      900: '#5A441C',
-      950: '#3A2C12',
+      50:  '#EDE9FE',
+      100: '#DDD6FE',
+      200: '#C4B5FD',
+      300: '#A78BFA',
+      400: '#8B5CF6',
+      500: '#7C3AED',
+      600: '#6D28D9',
+      700: '#5B21B6',
+      800: '#4C1D95',
+      900: '#3B1671',
+      950: '#2A1055',
     },
     colorScheme: {
-      dark: {
-        surface: {
-          0:   '#0A0A0A',
-          50:  '#1A1A1A',
-          100: '#2D2D2D',
-          200: '#3D3D3D',
-          300: '#4A4A4A',
-          400: '#8A8A8A',
-          500: '#D4D4D4',
-          600: '#E8E8E8',
-          700: '#F5F5F5',
-          800: '#F5F5F5',
-          900: '#F5F5F5',
-          950: '#F5F5F5',
-        },
+      light: {
         primary: {
-          color:         '{primary.500}',
-          inverseColor:  '#0A0A0A',
-          hoverColor:    '{primary.400}',
-          activeColor:   '{primary.600}',
+          color:        '{primary.500}',
+          inverseColor: '#FFFFFF',
+          hoverColor:   '{primary.600}',
+          activeColor:  '{primary.700}',
         },
       }
     }
@@ -96,10 +82,11 @@ const app = createApp(App)
 
 app.use(PrimeVue, {
   theme: {
-    preset: CarbonGold,
+    preset: PurpleLight,
     options: {
       prefix: 'p',
-      darkModeSelector: ':root',
+      // Inert selector: never applied, so PrimeVue stays in its LIGHT color scheme.
+      darkModeSelector: '.app-dark',
       cssLayer: false
     }
   }

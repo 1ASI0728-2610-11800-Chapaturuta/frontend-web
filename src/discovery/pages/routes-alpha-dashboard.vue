@@ -168,8 +168,8 @@ export default {
   align-items: center;
   gap: 6px;
   padding: 8px 16px;
-  background: rgba(201,168,76,0.1);
-  border: 1px solid rgba(201,168,76,0.3);
+  background: rgba(139,92,246,0.1);
+  border: 1px solid rgba(139,92,246,0.3);
   border-radius: 999px;
   font-size: 13px;
   font-weight: 600;

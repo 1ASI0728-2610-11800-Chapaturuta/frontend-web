@@ -102,16 +102,30 @@
     <pb-Dialog v-model:visible="showReserve" modal header="Reservar tramo" :style="{ width: '24rem' }">
       <div v-if="reserveSeg" class="reserve-body">
         <p class="reserve-route">{{ reserveSeg.from.name }} → {{ reserveSeg.to.name }}</p>
-        <label>Asientos</label>
-        <input v-model.number="reserveSeats" type="number" min="1" class="reserve-input" />
-        <small v-if="seatsError" class="field-error">{{ seatsError }}</small>
-        <label>Documento (DNI)</label>
-        <input v-model="reserveDni" type="text" inputmode="numeric" maxlength="8" class="reserve-input" placeholder="12345678" />
-        <small v-if="dniError" class="field-error">{{ dniError }}</small>
+
+        <!-- Solo se puede reservar un viaje YA PUBLICADO por un conductor (mismo
+             principio que las reservas normales). Sin viajes publicados no hay reserva. -->
+        <label>Viaje publicado</label>
+        <div v-if="loadingJoinable" class="reserve-hint">Buscando viajes publicados…</div>
+        <div v-else-if="!joinableTrips.length" class="reserve-empty">
+          Ningún conductor ha publicado un viaje para esta ruta todavía. No puedes reservar aún.
+        </div>
+        <select v-else v-model.number="selectedTripId" class="reserve-input">
+          <option v-for="t in joinableTrips" :key="t.id" :value="t.id">{{ tripOptionLabel(t) }}</option>
+        </select>
+
+        <template v-if="joinableTrips.length">
+          <label>Asientos</label>
+          <input v-model.number="reserveSeats" type="number" min="1" :max="maxSeats || 1" class="reserve-input" />
+          <small v-if="seatsError" class="field-error">{{ seatsError }}</small>
+          <label>Documento (DNI)</label>
+          <input v-model="reserveDni" type="text" inputmode="numeric" maxlength="8" class="reserve-input" placeholder="12345678" />
+          <small v-if="dniError" class="field-error">{{ dniError }}</small>
+        </template>
       </div>
       <template #footer>
         <pb-Button label="Cancelar" text @click="showReserve = false" />
-        <pb-Button label="Continuar al pago" icon="pi pi-arrow-right" :disabled="!!seatsError || !!dniError" @click="goToCheckout" />
+        <pb-Button label="Continuar al pago" icon="pi pi-arrow-right" :disabled="!selectedTrip || !!seatsError || !!dniError" @click="goToCheckout" />
       </template>
     </pb-Dialog>
 
@@ -180,43 +194,83 @@ function saveItinerary() {
   toast.add({ severity: 'success', summary: 'Itinerario guardado', detail: 'Lo tendrás disponible en esta sesión.', life: 2500 })
 }
 
-// ── Reserva de un tramo (reusa el flujo de reserva existente) ────────────────
+// ── Reserva de un tramo ──────────────────────────────────────────────────────
+// Mismo principio que las reservas normales (route-complete-details): solo se
+// reserva un viaje YA PUBLICADO por un conductor y con asientos libres. NO se
+// fabrica un viaje. El backend descuenta asientos contra la capacidad real del
+// viaje elegido, así que no se puede reservar sin viaje publicado ni de más.
+const tripService = new TripService()
+const reservationService = new ReservationService()
+
 const showReserve = ref(false)
 const reserveSeg = ref(null)
 const reserveSeats = ref(1)
 const reserveDni = ref('')
 const showCheckout = ref(false)
 const checkoutAmount = ref(0)
+const joinableTrips = ref([])
+const loadingJoinable = ref(false)
+const selectedTripId = ref(null)
 
-const seatsError = computed(() => integerMin(reserveSeats.value, 1, 'Los asientos'))
+const selectedTrip = computed(() => joinableTrips.value.find(t => t.id === selectedTripId.value) || null)
+const maxSeats = computed(() => selectedTrip.value?.availableSeats ?? 0)
+const seatsError = computed(() => {
+  const base = integerMin(reserveSeats.value, 1, 'Los asientos')
+  if (base) return base
+  if (selectedTrip.value && Number(reserveSeats.value) > maxSeats.value)
+    return `Solo quedan ${maxSeats.value} asiento(s) en este viaje.`
+  return null
+})
 const dniError = computed(() => dniRule(reserveDni.value))
 
-function openReserve(seg) {
+function tripOptionLabel(t) {
+  const seats = t.availableSeats ?? 0
+  const price = Number(t.price ?? reserveSeg.value?.price ?? 0).toFixed(2)
+  const when = t.startTime ? new Date(t.startTime).toLocaleString('es-PE', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : ''
+  return `${when ? when + ' · ' : ''}${seats} asiento(s) · S/ ${price}`
+}
+
+async function openReserve(seg) {
   reserveSeg.value = seg
   reserveSeats.value = 1
   reserveDni.value = ''
+  selectedTripId.value = null
+  joinableTrips.value = []
   showReserve.value = true
+  await loadJoinableTrips(seg)
+}
+
+// Viajes publicados por conductores para la ruta de este tramo (con asientos libres).
+async function loadJoinableTrips(seg) {
+  if (!seg?.routeId) return
+  loadingJoinable.value = true
+  try {
+    joinableTrips.value = await tripService.getJoinableTrips(seg.routeId)
+    if (joinableTrips.value.length) selectedTripId.value = joinableTrips.value[0].id
+  } catch {
+    joinableTrips.value = []
+  } finally {
+    loadingJoinable.value = false
+  }
 }
 
 function goToCheckout() {
+  if (!selectedTrip.value) {
+    toast.add({ severity: 'warn', summary: 'Elige un viaje', detail: 'No hay un viaje publicado para reservar en esta ruta.', life: 3500 })
+    return
+  }
   if (seatsError.value || dniError.value) return
-  checkoutAmount.value = Number(reserveSeg.value.price || 0) * Number(reserveSeats.value || 1)
+  const unitPrice = Number(selectedTrip.value.price ?? reserveSeg.value.price ?? 0)
+  checkoutAmount.value = unitPrice * Number(reserveSeats.value || 1)
   showReserve.value = false
   showCheckout.value = true
 }
 
+// Se une al viaje publicado elegido (el backend descuenta sus asientos reales).
 async function legPayProvider(method) {
-  const seg = reserveSeg.value
-  const trip = await new TripService().createTrip({
-    fkIdRoute: seg.routeId,
-    fkIdOriginStop: seg.from.id,
-    fkIdDestinationStop: seg.to.id,
-    price: seg.price,
-    availableSeats: Number(reserveSeats.value)
-  })
-  const reservation = await new ReservationService().createReservation({
+  const reservation = await reservationService.createReservation({
     fkIdUser: getUserId(),
-    fkIdTrip: trip?.id ?? trip?.tripId,
+    fkIdTrip: selectedTrip.value.id,
     documentType: 'Dni',
     documentNumber: reserveDni.value,
     seats: reserveSeats.value,
@@ -242,7 +296,7 @@ function onLegPaid() {
 
 /* Coming soon */
 .coming-soon { background: linear-gradient(180deg, rgba(96,165,250,0.06), var(--carbon-800) 60%); border: 1px solid var(--carbon-700); border-radius: var(--radius-xl); padding: 2.25rem 2rem; display: flex; flex-direction: column; align-items: center; gap: 0.85rem; text-align: center; }
-.cs-icon { width: 72px; height: 72px; border-radius: 50%; background: rgba(201,168,76,0.12); display: flex; align-items: center; justify-content: center; color: var(--gold-400); font-size: 30px; }
+.cs-icon { width: 72px; height: 72px; border-radius: 50%; background: rgba(139,92,246,0.12); display: flex; align-items: center; justify-content: center; color: var(--gold-400); font-size: 30px; }
 .coming-soon h2 { color: var(--carbon-50); font-size: 1.4rem; font-weight: 800; }
 .coming-soon p { color: var(--carbon-400); max-width: 560px; font-size: 0.92rem; line-height: 1.5; }
 .coming-soon p strong { color: var(--gold-300); }
@@ -255,8 +309,8 @@ function onLegPaid() {
 .cs-input button { border: none; background: var(--carbon-700); color: var(--carbon-400); border-radius: var(--radius-md); padding: 0 18px; }
 
 /* Upsell */
-.upsell-card { background: linear-gradient(180deg, rgba(201,168,76,0.07), var(--carbon-800) 60%); border: 1px solid rgba(201,168,76,0.35); border-radius: var(--radius-xl); padding: 2.5rem 2rem; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 0.85rem; }
-.lock-circle { width: 72px; height: 72px; border-radius: 50%; background: rgba(201,168,76,0.12); display: flex; align-items: center; justify-content: center; color: var(--gold-400); font-size: 32px; }
+.upsell-card { background: linear-gradient(180deg, rgba(139,92,246,0.07), var(--carbon-800) 60%); border: 1px solid rgba(139,92,246,0.35); border-radius: var(--radius-xl); padding: 2.5rem 2rem; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 0.85rem; }
+.lock-circle { width: 72px; height: 72px; border-radius: 50%; background: rgba(139,92,246,0.12); display: flex; align-items: center; justify-content: center; color: var(--gold-400); font-size: 32px; }
 .upsell-card h2 { color: var(--carbon-50); font-size: 1.4rem; font-weight: 800; }
 .upsell-card p { color: var(--carbon-400); max-width: 520px; font-size: 0.92rem; line-height: 1.5; }
 .upsell-card p strong { color: var(--gold-300); }
@@ -286,7 +340,7 @@ function onLegPaid() {
 .seg-body { flex: 1; display: flex; flex-direction: column; }
 .seg-body strong { color: var(--carbon-100); font-size: 0.85rem; }
 .seg-body span { color: var(--carbon-400); font-size: 0.76rem; }
-.seg-reserve { border: 1px solid rgba(201,168,76,0.4); background: rgba(201,168,76,0.12); color: var(--gold-400); border-radius: 6px; padding: 5px 12px; font-size: 0.76rem; font-weight: 700; cursor: pointer; }
+.seg-reserve { border: 1px solid rgba(139,92,246,0.4); background: rgba(139,92,246,0.12); color: var(--gold-400); border-radius: 6px; padding: 5px 12px; font-size: 0.76rem; font-weight: 700; cursor: pointer; }
 .it-actions { margin-top: 8px; display: flex; justify-content: flex-end; }
 .ghost { background: transparent; border: 1px solid var(--carbon-600); color: var(--carbon-300); border-radius: 6px; padding: 5px 12px; font-size: 0.76rem; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
 
@@ -308,4 +362,6 @@ function onLegPaid() {
 .reserve-input { padding: 10px 12px; background: var(--carbon-900); border: 1px solid var(--carbon-700); border-radius: 8px; color: var(--carbon-100); }
 .reserve-input:focus { outline: none; border-color: var(--gold-500); }
 .field-error { color: #e5484d; font-size: 12px; }
+.reserve-hint { font-size: 0.8rem; color: var(--carbon-400); padding: 4px 0; }
+.reserve-empty { font-size: 0.82rem; color: #e5b84d; background: rgba(229,184,77,0.1); border: 1px solid rgba(229,184,77,0.3); border-radius: 8px; padding: 8px 10px; }
 </style>

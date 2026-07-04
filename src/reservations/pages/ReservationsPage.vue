@@ -156,7 +156,7 @@ onMounted(load)
 .page-sub { font-size: 0.875rem; color: var(--carbon-400); margin-top: 4px; }
 .refresh-btn {
   display: inline-flex; align-items: center; gap: 8px;
-  border: 1px solid rgba(201,168,76,0.3); color: var(--gold-400); background: rgba(201,168,76,0.1);
+  border: 1px solid rgba(139,92,246,0.3); color: var(--gold-400); background: rgba(139,92,246,0.1);
   border-radius: var(--radius-md); padding: 8px 14px; cursor: pointer;
 }
 .state-card {
@@ -171,7 +171,7 @@ onMounted(load)
   background: var(--carbon-800); border: 1px solid var(--carbon-700); border-radius: var(--radius-lg);
 }
 .res-icon {
-  width: 40px; height: 40px; background: rgba(201,168,76,0.08); border: 1px solid rgba(201,168,76,0.2);
+  width: 40px; height: 40px; background: rgba(139,92,246,0.08); border: 1px solid rgba(139,92,246,0.2);
   border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center;
   color: var(--gold-500); flex-shrink: 0;
 }
@@ -190,5 +190,5 @@ onMounted(load)
 }
 .act-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .act-cancel { background: rgba(248,113,113,0.12); color: var(--danger); border-color: rgba(248,113,113,0.3); }
-.act-pay    { background: rgba(201,168,76,0.14); color: var(--gold-400); border-color: rgba(201,168,76,0.35); }
+.act-pay    { background: rgba(139,92,246,0.14); color: var(--gold-400); border-color: rgba(139,92,246,0.35); }
 </style>

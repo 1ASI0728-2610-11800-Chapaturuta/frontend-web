@@ -264,7 +264,7 @@ onMounted(()=>{
 }
 
 .new-route-trigger { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
-.limit-hint { display: inline-flex; align-items: center; gap: 5px; color: var(--gold-400, #c9a84c); font-size: 11px; max-width: 240px; text-align: right; }
+.limit-hint { display: inline-flex; align-items: center; gap: 5px; color: var(--gold-400, #8B5CF6); font-size: 11px; max-width: 240px; text-align: right; }
 .nueva-ruta-button{
   /*Flex para centrar*/
   display: flex;

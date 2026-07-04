@@ -57,7 +57,7 @@ export default {
 .route-card:hover {
   border-color: var(--gold-500);
   transform: translateY(-4px);
-  box-shadow: 0 8px 32px rgba(201,168,76,0.2);
+  box-shadow: 0 8px 32px rgba(139,92,246,0.2);
 }
 
 .card-image {
@@ -79,7 +79,7 @@ export default {
   right: 10px;
   background: rgba(0,0,0,0.7);
   backdrop-filter: blur(4px);
-  border: 1px solid rgba(201,168,76,0.3);
+  border: 1px solid rgba(139,92,246,0.3);
   border-radius: var(--radius-sm);
   padding: 4px 10px;
   font-size: 11px;

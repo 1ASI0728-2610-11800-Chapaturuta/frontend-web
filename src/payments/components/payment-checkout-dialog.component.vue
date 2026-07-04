@@ -167,7 +167,7 @@ function close() {
 .method-intro { color: var(--carbon-300); font-size: 0.9rem; margin-bottom: 0.6rem; }
 .amount-pill {
   display: inline-block; margin-bottom: 1rem; padding: 6px 12px; border-radius: 999px;
-  background: rgba(201,168,76,0.1); border: 1px solid rgba(201,168,76,0.25); color: var(--carbon-200); font-size: 0.85rem;
+  background: rgba(139,92,246,0.1); border: 1px solid rgba(139,92,246,0.25); color: var(--carbon-200); font-size: 0.85rem;
 }
 .amount-pill strong { color: var(--gold-400); }
 .method-card {

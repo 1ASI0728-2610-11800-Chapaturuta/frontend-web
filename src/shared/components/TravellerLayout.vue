@@ -82,7 +82,7 @@ export default {
   z-index: 100;
   background: var(--carbon-950);
   border-bottom: 1px solid var(--carbon-700);
-  box-shadow: 0 2px 20px rgba(0,0,0,0.4);
+  box-shadow: 0 2px 12px rgba(80,60,140,0.10);
 }
 .header-inner {
   max-width: 1280px;
@@ -128,10 +128,10 @@ export default {
   border-radius: var(--radius-sm);
   transition: color var(--duration-fast) ease, background var(--duration-fast) ease;
 }
-.nav-link:hover { color: var(--carbon-100); background: var(--carbon-800); }
+.nav-link:hover { color: var(--carbon-100); background: rgba(139,92,246,0.08); }
 .nav-link.router-link-active {
   color: var(--gold-500);
-  background: rgba(201,168,76,0.1);
+  background: rgba(139,92,246,0.1);
   font-weight: 600;
 }
 
@@ -199,7 +199,7 @@ export default {
 .btn-profile:hover { border-color: var(--gold-500); }
 .profile-avatar {
   width: 26px; height: 26px;
-  background: rgba(201,168,76,0.15);
+  background: rgba(139,92,246,0.15);
   border: 1px solid var(--gold-500);
   border-radius: 50%;
   display: flex; align-items: center; justify-content: center;

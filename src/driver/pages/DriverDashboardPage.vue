@@ -195,7 +195,7 @@ const byDay = computed(() => {
   return buckets
 })
 
-const GOLD = '#c9a84c'
+const GOLD = '#8B5CF6'
 const hourChart = computed(() => ({
   labels: Array.from({ length: 24 }, (_, h) => `${h}h`),
   datasets: [{ label: 'Viajes', data: byHour.value, backgroundColor: GOLD, borderRadius: 4 }]
@@ -265,12 +265,12 @@ const insights = computed(() => {
 
 /* Upsell */
 .upsell-card {
-  background: linear-gradient(180deg, rgba(201,168,76,0.07), var(--carbon-800) 60%);
-  border: 1px solid rgba(201,168,76,0.35); border-radius: var(--radius-xl);
+  background: linear-gradient(180deg, rgba(139,92,246,0.07), var(--carbon-800) 60%);
+  border: 1px solid rgba(139,92,246,0.35); border-radius: var(--radius-xl);
   padding: 2.5rem 2rem; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 0.85rem;
 }
 .lock-circle {
-  width: 72px; height: 72px; border-radius: 50%; background: rgba(201,168,76,0.12);
+  width: 72px; height: 72px; border-radius: 50%; background: rgba(139,92,246,0.12);
   display: flex; align-items: center; justify-content: center; color: var(--gold-400); font-size: 32px;
 }
 .upsell-card h2 { color: var(--carbon-50); font-size: 1.4rem; font-weight: 800; }

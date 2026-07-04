@@ -70,8 +70,8 @@ export default {
 .schedule-times { flex: 1; display: flex; flex-wrap: wrap; gap: 8px; }
 .time-slot {
   padding: 3px 10px;
-  background: rgba(201,168,76,0.1);
-  border: 1px solid rgba(201,168,76,0.3);
+  background: rgba(139,92,246,0.1);
+  border: 1px solid rgba(139,92,246,0.3);
   border-radius: 999px;
   color: var(--gold-400);
   font-size: 0.82rem;

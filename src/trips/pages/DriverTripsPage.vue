@@ -314,7 +314,7 @@ onMounted(load)
   width: 42px; height: 42px; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
   border-radius: var(--radius-sm);
-  background: rgba(201,168,76,0.12); border: 1px solid var(--gold-500); color: var(--gold-500);
+  background: rgba(139,92,246,0.12); border: 1px solid var(--gold-500); color: var(--gold-500);
 }
 .trip-info { flex: 1; min-width: 0; }
 .trip-info h3 { font-size: 1rem; font-weight: 600; color: var(--carbon-50); }
@@ -324,7 +324,7 @@ onMounted(load)
 
 .trip-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex-shrink: 0; }
 .status-badge { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; padding: 3px 8px; border-radius: 999px; }
-.st-pending { background: rgba(201,168,76,0.15); color: var(--gold-500); }
+.st-pending { background: rgba(139,92,246,0.15); color: var(--gold-500); }
 .st-progress { background: rgba(96,165,250,0.15); color: #60a5fa; }
 .st-completed { background: rgba(74,222,128,0.15); color: #4ade80; }
 .st-cancelled { background: rgba(248,113,113,0.15); color: #f87171; }

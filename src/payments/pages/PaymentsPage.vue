@@ -294,7 +294,7 @@ onMounted(load)
 </script>
 
 <style scoped>
-.payments-page { display: flex; flex-direction: column; gap: 1.5rem; }
+.payments-page { display: flex; flex-direction: column; gap: 1.5rem; padding: 2rem; max-width: 1040px; margin: 0 auto; }
 .page-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
 .page-title { color: var(--carbon-50); font-size: 1.5rem; font-weight: 700; }
 .page-sub { color: var(--carbon-400); font-size: 0.875rem; margin-top: 4px; }
@@ -302,9 +302,9 @@ onMounted(load)
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  border: 1px solid rgba(201,168,76,0.3);
+  border: 1px solid rgba(139,92,246,0.3);
   color: var(--gold-400);
-  background: rgba(201,168,76,0.1);
+  background: rgba(139,92,246,0.1);
   border-radius: var(--radius-md);
   padding: 8px 14px;
   cursor: pointer;
@@ -342,11 +342,11 @@ onMounted(load)
 .amount { color: var(--gold-400); font-size: 1.75rem; font-weight: 700; }
 .pay-action {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  border: 1px solid rgba(201,168,76,0.4); background: rgba(201,168,76,0.1); color: var(--gold-400);
+  border: 1px solid rgba(139,92,246,0.4); background: rgba(139,92,246,0.1); color: var(--gold-400);
   border-radius: var(--radius-md); padding: 10px; cursor: pointer; font-weight: 600;
   font-family: var(--font-family);
 }
-.pay-action:hover { background: rgba(201,168,76,0.2); }
+.pay-action:hover { background: rgba(139,92,246,0.2); }
 .card-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .ghost-action {
   display: inline-flex; align-items: center; gap: 6px;

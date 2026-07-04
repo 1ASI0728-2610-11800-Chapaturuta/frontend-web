@@ -207,7 +207,7 @@ async function handleLogin() {
   gap: 8px;
 }
 .logo-glow {
-  box-shadow: 0 0 32px rgba(201,168,76,0.25);
+  box-shadow: 0 0 32px rgba(139,92,246,0.25);
   border-radius: 50%;
 }
 .logo {
@@ -232,7 +232,7 @@ async function handleLogin() {
   max-width: 420px;
   background: rgba(45,45,45,0.8);
   border-radius: var(--radius-xl);
-  border: 1px solid rgba(201,168,76,0.2);
+  border: 1px solid rgba(139,92,246,0.2);
   padding: 2rem;
   backdrop-filter: blur(12px);
   box-shadow: var(--shadow-elevated);
@@ -284,7 +284,7 @@ async function handleLogin() {
   outline: none;
 }
 .input-wrapper input::placeholder { color: var(--carbon-400); }
-.input-wrapper input:focus { border-color: var(--gold-500); box-shadow: 0 0 0 2px rgba(201,168,76,0.15); }
+.input-wrapper input:focus { border-color: var(--gold-500); box-shadow: 0 0 0 2px rgba(139,92,246,0.15); }
 .field-group.error input { border-color: var(--danger); }
 .field-group small { color: var(--danger); font-size: 11px; }
 .toggle-pwd {
@@ -330,7 +330,7 @@ async function handleLogin() {
   justify-content: center;
   gap: 8px;
   transition: opacity var(--duration-fast) ease, box-shadow var(--duration-normal) ease;
-  box-shadow: 0 4px 20px rgba(201,168,76,0.3);
+  box-shadow: 0 4px 20px rgba(139,92,246,0.3);
 }
 .btn-primary:hover:not(:disabled) { opacity: 0.9; box-shadow: var(--shadow-gold); }
 .btn-primary:active:not(:disabled) { transform: scale(0.98); }

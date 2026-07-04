@@ -255,8 +255,8 @@ onMounted(load)
 
 .trip-icon {
   width: 40px; height: 40px;
-  background: rgba(201,168,76,0.08);
-  border: 1px solid rgba(201,168,76,0.2);
+  background: rgba(139,92,246,0.08);
+  border: 1px solid rgba(139,92,246,0.2);
   border-radius: var(--radius-md);
   display: flex; align-items: center; justify-content: center;
   color: var(--gold-500);
@@ -295,7 +295,7 @@ onMounted(load)
 .act-start    { background: rgba(96,165,250,0.12); color: var(--info); border-color: rgba(96,165,250,0.3); }
 .act-complete { background: rgba(74,222,128,0.12); color: var(--success); border-color: rgba(74,222,128,0.3); }
 .act-cancel   { background: rgba(248,113,113,0.12); color: var(--danger); border-color: rgba(248,113,113,0.3); }
-.act-pay      { background: rgba(201,168,76,0.14); color: var(--gold-400); border-color: rgba(201,168,76,0.35); }
+.act-pay      { background: rgba(139,92,246,0.14); color: var(--gold-400); border-color: rgba(139,92,246,0.35); }
 
 .skeleton-list { display: flex; flex-direction: column; gap: 10px; }
 .sk-row { height: 68px; background: var(--carbon-800); border-radius: var(--radius-lg); }

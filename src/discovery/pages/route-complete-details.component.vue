@@ -569,7 +569,7 @@ export default {
   display: flex; align-items: center; gap: 10px; padding: 10px 12px; cursor: pointer;
   background: var(--carbon-800); border: 1px solid var(--carbon-700); border-radius: var(--radius-md);
 }
-.trip-option.active { border-color: var(--gold-500); background: rgba(201,168,76,0.08); }
+.trip-option.active { border-color: var(--gold-500); background: rgba(139,92,246,0.08); }
 .trip-option input { accent-color: var(--gold-500); }
 .to-info { display: flex; flex-direction: column; gap: 2px; flex: 1; }
 .to-driver { font-size: 0.85rem; color: var(--carbon-100); display: inline-flex; align-items: center; gap: 5px; }

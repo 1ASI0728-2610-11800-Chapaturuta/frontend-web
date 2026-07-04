@@ -34,7 +34,9 @@ export class RouteService extends BaseService {
         stopsIds: [routeInfo.selectedFirstStop, routeInfo.selectedSecondStop].map(Number),
         schedules
       }
-      const response = await this.http.post(this.resourcePath(), requestBody)
+      // Crear la ruta calcula geometría/ETA vía OSRM en el backend: puede pasar los
+      // 5s por defecto de BaseService. Timeout amplio solo para esta request.
+      const response = await this.http.post(this.resourcePath(), requestBody, { timeout: 30000 })
       return response.data
     } catch (error) {
       throw this._enhanceError(error)
@@ -90,7 +92,8 @@ export class RouteService extends BaseService {
 
   async previewRoute(coordinates) {
     try {
-      const response = await this.http.post(`${this.resourcePath()}/preview`, { coordinates })
+      // El preview traza la ruta con OSRM: timeout amplio para no abortar a los 5s.
+      const response = await this.http.post(`${this.resourcePath()}/preview`, { coordinates }, { timeout: 30000 })
       return {
         distanceMeters: response.data.distanceMeters,
         durationSeconds: response.data.durationSeconds,

@@ -204,8 +204,8 @@ onMounted(load)
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  border: 1px solid rgba(201,168,76,0.3);
-  background: rgba(201,168,76,0.1);
+  border: 1px solid rgba(139,92,246,0.3);
+  background: rgba(139,92,246,0.1);
   color: var(--gold-400);
   border-radius: var(--radius-md);
   padding: 8px 14px;
@@ -235,7 +235,7 @@ onMounted(load)
   border: 1px solid var(--carbon-600); background: var(--carbon-900); color: var(--carbon-200);
   border-radius: var(--radius-md); padding: 8px 14px; cursor: pointer; font-family: var(--font-family);
 }
-.btn-photo.upload { border-color: rgba(201,168,76,0.4); background: rgba(201,168,76,0.1); color: var(--gold-400); }
+.btn-photo.upload { border-color: rgba(139,92,246,0.4); background: rgba(139,92,246,0.1); color: var(--gold-400); }
 .btn-photo:disabled { opacity: 0.6; cursor: not-allowed; }
 .photo-hint { font-size: 11px; color: var(--carbon-500); }
 .state { color: var(--carbon-400); }

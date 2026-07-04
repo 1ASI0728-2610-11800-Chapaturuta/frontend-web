@@ -81,11 +81,11 @@ export default {
 }
 .plan-card:hover {
   border-color: var(--carbon-600);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+  box-shadow: 0 8px 24px rgba(80,60,140,0.12);
 }
 .plan-card.featured {
   border-color: var(--gold-500);
-  box-shadow: 0 4px 24px rgba(201,168,76,0.2);
+  box-shadow: 0 4px 24px rgba(139,92,246,0.2);
 }
 
 .popular-badge {

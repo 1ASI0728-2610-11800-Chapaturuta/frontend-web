@@ -119,8 +119,8 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: rgba(201,168,76,0.1);
-  border: 1px solid rgba(201,168,76,0.3);
+  background: rgba(139,92,246,0.1);
+  border: 1px solid rgba(139,92,246,0.3);
   border-radius: var(--radius-md);
   padding: 8px 16px;
   color: var(--gold-400);

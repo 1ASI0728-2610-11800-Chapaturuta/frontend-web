@@ -117,19 +117,19 @@ onMounted(async () => {
   border-radius: var(--radius-md, 10px); padding: 1rem 1.1rem;
   display: flex; flex-direction: column; gap: 0.55rem;
 }
-.receipt-title { color: var(--gold-400, #c9a84c); font-size: 11px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.04em; }
+.receipt-title { color: var(--gold-400, #8B5CF6); font-size: 11px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.04em; }
 .receipt-row { display: flex; justify-content: space-between; font-size: 0.85rem; }
 .receipt-row span { color: var(--carbon-400, #9aa0ab); }
 .receipt-row strong { color: var(--carbon-100, #e3e5e9); }
 .receipt-row strong.ok { color: var(--success, #4ade80); }
 .primary-btn {
   margin-top: 0.75rem; width: 100%; border: none; cursor: pointer;
-  background: var(--gradient-gold, linear-gradient(90deg,#c9a84c,#e7c977));
+  background: var(--gradient-gold, linear-gradient(90deg,#8B5CF6,#e7c977));
   color: var(--carbon-950, #0c0d10); font-weight: 800; font-size: 0.95rem;
   padding: 12px 14px; border-radius: var(--radius-md, 10px); font-family: var(--font-family);
 }
 .primary-btn.ghost { background: var(--carbon-700, #2a2d35); color: var(--carbon-200, #c7cad1); }
 .spinner { width: 16px; height: 16px; border: 2px solid var(--carbon-950); border-top-color: transparent; border-radius: 50%; animation: spin 0.7s linear infinite; }
-.spinner.big { width: 44px; height: 44px; border-width: 4px; border-color: var(--gold-400, #c9a84c); border-top-color: transparent; }
+.spinner.big { width: 44px; height: 44px; border-width: 4px; border-color: var(--gold-400, #8B5CF6); border-top-color: transparent; }
 @keyframes spin { to { transform: rotate(360deg); } }
 </style>

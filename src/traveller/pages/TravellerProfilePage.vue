@@ -93,12 +93,12 @@ const logout = () => {
 }
 .avatar {
   width: 72px; height: 72px;
-  background: rgba(201,168,76,0.15);
+  background: rgba(139,92,246,0.15);
   border: 2px solid var(--gold-500);
   border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
-  box-shadow: 0 0 24px rgba(201,168,76,0.3);
+  box-shadow: 0 0 24px rgba(139,92,246,0.3);
 }
 .avatar-initials { font-size: 1.5rem; font-weight: 700; color: var(--gold-400); }
 .profile-name { font-size: 1.25rem; font-weight: 700; color: var(--carbon-50); }
@@ -109,8 +109,8 @@ const logout = () => {
   gap: 5px;
   margin-top: 8px;
   padding: 4px 10px;
-  background: rgba(201,168,76,0.1);
-  border: 1px solid rgba(201,168,76,0.25);
+  background: rgba(139,92,246,0.1);
+  border: 1px solid rgba(139,92,246,0.25);
   border-radius: 999px;
   font-size: 11px;
   font-weight: 600;
@@ -153,7 +153,7 @@ const logout = () => {
 .menu-item:hover { border-color: var(--gold-500); }
 .menu-icon {
   width: 36px; height: 36px;
-  background: rgba(201,168,76,0.08);
+  background: rgba(139,92,246,0.08);
   border-radius: var(--radius-sm);
   display: flex; align-items: center; justify-content: center;
   color: var(--gold-500);

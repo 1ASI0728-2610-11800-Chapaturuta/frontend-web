@@ -112,7 +112,7 @@ function remove() {
 }
 .dropzone:hover, .dropzone.dragging {
   border-color: var(--gold-500);
-  background: rgba(201,168,76,0.06);
+  background: rgba(139,92,246,0.06);
 }
 .dz-icon { font-size: 1.6rem; color: var(--gold-500); }
 .dz-text { font-size: 0.85rem; color: var(--carbon-300); }

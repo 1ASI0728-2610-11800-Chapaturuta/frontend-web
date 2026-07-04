@@ -107,11 +107,11 @@
           <button
             class="subscribe-btn"
             type="button"
-            :disabled="!premiumPlan || !premiumPlan.isActive"
-            @click="premiumPlan && openCheckout(premiumPlan)"
+            :disabled="!premiumPlan || !premiumPlan.isActive || alreadyPremium"
+            @click="!alreadyPremium && premiumPlan && openCheckout(premiumPlan)"
           >
-            <i class="pi pi-bolt"></i>
-            Pasar a Premium
+            <i :class="alreadyPremium ? 'pi pi-check' : 'pi pi-bolt'"></i>
+            {{ alreadyPremium ? 'Ya eres Premium' : 'Pasar a Premium' }}
           </button>
         </article>
       </section>
@@ -277,6 +277,8 @@ const checkoutHeader = computed(() => {
 
 const isDriver = computed(() => Number(getCurrentUser()?.role) === 2)
 const premiumPlan = computed(() => plans.value[0] || null)
+// Ya tiene Premium activo: no debe poder pagar otra vez (evita doble cobro).
+const alreadyPremium = computed(() => !!activeSubscription.value)
 const premiumPriceLabel = computed(() => {
   if (!premiumPlan.value) return 'S/ 19.90'
   const cur = premiumPlan.value.currency || 'S/'
@@ -427,6 +429,7 @@ async function load() {
 
 // ── Checkout: abrir modal y elegir metodo ──────────────────────────────────
 function openCheckout(plan) {
+  if (alreadyPremium.value) return // ya es Premium: no reabrir el checkout
   checkoutPlan.value = plan
   checkoutStep.value = 'method'
   checkoutError.value = ''
@@ -516,7 +519,7 @@ onMounted(load)
 </script>
 
 <style scoped>
-.subscriptions-page { display: flex; flex-direction: column; gap: 1.5rem; }
+.subscriptions-page { display: flex; flex-direction: column; gap: 1.5rem; padding: 2rem; max-width: 1040px; margin: 0 auto; }
 .page-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
 .page-title { color: var(--carbon-50); font-size: 1.5rem; font-weight: 700; }
 .page-sub { color: var(--carbon-400); font-size: 0.875rem; margin-top: 4px; }
@@ -530,14 +533,14 @@ onMounted(load)
   cursor: pointer;
   font-family: var(--font-family);
 }
-.refresh-btn { border: 1px solid rgba(201,168,76,0.3); color: var(--gold-400); background: rgba(201,168,76,0.1); padding: 8px 14px; }
+.refresh-btn { border: 1px solid rgba(139,92,246,0.3); color: var(--gold-400); background: rgba(139,92,246,0.1); padding: 8px 14px; }
 
 /* ── Contexto de rol ── */
 .role-context {
   display: inline-flex; align-items: center; gap: 8px;
   align-self: flex-start;
-  background: rgba(201,168,76,0.08);
-  border: 1px solid rgba(201,168,76,0.25);
+  background: rgba(139,92,246,0.08);
+  border: 1px solid rgba(139,92,246,0.25);
   color: var(--gold-300);
   padding: 6px 12px; border-radius: 999px; font-size: 0.8rem;
 }
@@ -587,16 +590,16 @@ onMounted(load)
   display: flex; flex-direction: column; gap: 1.1rem;
 }
 .plan-card.premium {
-  border-color: rgba(201,168,76,0.6);
-  background: linear-gradient(180deg, rgba(201,168,76,0.07) 0%, var(--carbon-800) 60%);
-  box-shadow: 0 0 0 1px rgba(201,168,76,0.25), 0 14px 40px rgba(201,168,76,0.12);
+  border-color: rgba(139,92,246,0.6);
+  background: linear-gradient(180deg, rgba(139,92,246,0.07) 0%, var(--carbon-800) 60%);
+  box-shadow: 0 0 0 1px rgba(139,92,246,0.25), 0 14px 40px rgba(139,92,246,0.12);
 }
 .ribbon {
   position: absolute; top: -11px; right: 18px;
   background: var(--gradient-gold); color: var(--carbon-950);
   font-size: 11px; font-weight: 800; letter-spacing: 0.04em;
   padding: 4px 12px; border-radius: 999px; text-transform: uppercase;
-  box-shadow: 0 4px 14px rgba(201,168,76,0.4);
+  box-shadow: 0 4px 14px rgba(139,92,246,0.4);
 }
 .plan-head { display: flex; justify-content: space-between; gap: 1rem; align-items: flex-start; }
 .plan-head h3 { color: var(--carbon-50); font-size: 1.25rem; font-weight: 700; }
@@ -630,7 +633,7 @@ onMounted(load)
 .compare-row { display: grid; grid-template-columns: 2fr 1fr 1fr; align-items: center; }
 .compare-row .feat { padding: 0.85rem 1.1rem; color: var(--carbon-200); font-size: 0.875rem; }
 .compare-row .col { padding: 0.85rem 1rem; text-align: center; font-size: 0.85rem; color: var(--carbon-300); }
-.compare-row .premium-col { background: rgba(201,168,76,0.05); }
+.compare-row .premium-col { background: rgba(139,92,246,0.05); }
 .compare-row + .compare-row { border-top: 1px solid var(--carbon-700); }
 .compare-row.head { background: var(--carbon-900); }
 .compare-row.head .feat, .compare-row.head .col { color: var(--carbon-100); font-weight: 700; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.03em; }
@@ -655,7 +658,7 @@ onMounted(load)
 /* ── Badge de estado ── */
 .status-badge { display: inline-block; margin-left: 8px; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 999px; vertical-align: middle; }
 .status-badge.ok { background: rgba(74,222,128,0.14); color: var(--success); }
-.status-badge.pending { background: rgba(201,168,76,0.16); color: var(--gold-400); }
+.status-badge.pending { background: rgba(139,92,246,0.16); color: var(--gold-400); }
 .status-badge.danger { background: rgba(248,113,113,0.14); color: var(--danger); }
 .status-badge.muted { background: var(--carbon-700); color: var(--carbon-300); }
 

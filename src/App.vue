@@ -32,41 +32,45 @@ export default {
 
 <style>
 :root {
-  /* Carbon palette */
-  --carbon-950: #0A0A0A;
-  --carbon-900: #1A1A1A;
-  --carbon-800: #2D2D2D;
-  --carbon-700: #3D3D3D;
-  --carbon-600: #4A4A4A;
-  --carbon-500: #6A6A6A;
-  --carbon-400: #8A8A8A;
-  --carbon-300: #BEBEBE;
-  --carbon-200: #D4D4D4;
-  --carbon-100: #E8E8E8;
-  --carbon-50:  #F5F5F5;
+  /* Carbon palette — LIGHT theme.
+     Ramp semantics preserved (high numbers = surfaces, low numbers = text),
+     but flipped to light: 950/800 = white surfaces, 50/100 = dark ink.
+     --carbon-950 doubles as on-accent text (white) on the purple accent. */
+  --carbon-950: #FFFFFF;
+  --carbon-900: #F4F3F9;
+  --carbon-800: #FFFFFF;
+  --carbon-700: #E7E3F2;
+  --carbon-600: #D6D0E6;
+  --carbon-500: #A8A0BC;
+  --carbon-400: #6E667E;
+  --carbon-300: #574F66;
+  --carbon-200: #372F44;
+  --carbon-100: #241E30;
+  --carbon-50:  #160F22;
 
-  /* Gold palette */
-  --gold-500: #C9A84C;
-  --gold-400: #D4B85C;
-  --gold-300: #E0C96E;
-  --gold-600: #B8943F;
-  --gold-100: #F5ECD0;
+  /* Accent palette — light purple (was gold). Kept the --gold-* names so every
+     component that references them switches automatically. */
+  --gold-500: #8B5CF6;
+  --gold-400: #A78BFA;
+  --gold-300: #C4B5FD;
+  --gold-600: #7C3AED;
+  --gold-100: #EDE9FE;
 
   /* Semantic */
-  --success: #4ADE80;
-  --danger:  #F87171;
-  --info:    #60A5FA;
-  --warning: #FBBF24;
+  --success: #16A34A;
+  --danger:  #DC2626;
+  --info:    #2563EB;
+  --warning: #D97706;
 
   /* Gradients */
-  --gradient-card: linear-gradient(135deg, #2D2D2D 0%, #1A1A1A 100%);
-  --gradient-gold: linear-gradient(135deg, #C9A84C 0%, #D4B85C 50%, #E0C96E 100%);
-  --gradient-hero: linear-gradient(180deg, #0A0A0A 0%, #1A1A1A 40%, #2D2D2D 100%);
+  --gradient-card: linear-gradient(135deg, #FFFFFF 0%, #F4F3F9 100%);
+  --gradient-gold: linear-gradient(135deg, #7C3AED 0%, #8B5CF6 55%, #A78BFA 100%);
+  --gradient-hero: linear-gradient(180deg, #FFFFFF 0%, #F4F3F9 40%, #EDE9FE 100%);
 
   /* Shadows */
-  --shadow-card:     0 4px 24px rgba(0,0,0,0.4);
-  --shadow-elevated: 0 8px 32px rgba(0,0,0,0.6);
-  --shadow-gold:     0 0 20px rgba(201,168,76,0.3);
+  --shadow-card:     0 4px 20px rgba(80,60,140,0.10);
+  --shadow-elevated: 0 8px 32px rgba(80,60,140,0.16);
+  --shadow-gold:     0 0 20px rgba(139,92,246,0.35);
 
   /* Typography */
   --font-family: 'Inter', system-ui, -apple-system, sans-serif;
@@ -102,6 +106,7 @@ body {
   width: 100%;
   min-height: 100vh;
   background-color: var(--carbon-900);
+  color: var(--carbon-100);
 }
 
 /* ── Page transitions ── */
