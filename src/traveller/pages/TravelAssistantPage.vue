@@ -129,6 +129,28 @@
       </template>
     </pb-Dialog>
 
+    <!-- Guardar itinerario en una colección -->
+    <pb-Dialog v-model:visible="showCollectionPicker" modal header="Guardar en colección" :style="{ width: '24rem' }">
+      <div class="collection-body">
+        <div v-if="!collections.length" class="reserve-empty">
+          Aún no tienes colecciones. Crea una desde la sección Colecciones y vuelve a intentarlo.
+        </div>
+        <template v-else>
+          <label>Elige una colección</label>
+          <select v-model.number="selectedCollectionId" class="reserve-input">
+            <option v-for="c in collections" :key="c.id" :value="c.id">{{ c.name || `Colección #${c.id}` }}</option>
+          </select>
+          <p class="collection-hint">Se guardarán las rutas de este itinerario en la colección elegida.</p>
+        </template>
+      </div>
+      <template #footer>
+        <pb-Button label="Cancelar" text @click="showCollectionPicker = false" />
+        <pb-Button label="Guardar" icon="pi pi-bookmark"
+          :disabled="!collections.length || selectedCollectionId == null" :loading="savingCollection"
+          @click="confirmSaveToCollection" />
+      </template>
+    </pb-Dialog>
+
     <PaymentCheckoutDialog
       v-model="showCheckout"
       title="Pagar tramo"
@@ -147,6 +169,7 @@ import { usePremiumStatus } from '@/shared/composables/usePremiumStatus.js'
 import { AssistantService } from '@/discovery/services/assistant.service.js'
 import { TripService } from '@/trips/services/trip.service.js'
 import { ReservationService } from '@/reservations/services/reservation.service.js'
+import { CollectionService } from '@/collections/services/collection.service.js'
 import PaymentCheckoutDialog from '@/payments/components/payment-checkout-dialog.component.vue'
 import { getUserId } from '@/shared/services/session.service.js'
 import { dni as dniRule, integerMin } from '@/shared/validation/validators.js'
@@ -190,8 +213,51 @@ async function scrollDown() {
   if (chatRef.value) chatRef.value.scrollTop = chatRef.value.scrollHeight
 }
 
-function saveItinerary() {
-  toast.add({ severity: 'success', summary: 'Itinerario guardado', detail: 'Lo tendrás disponible en esta sesión.', life: 2500 })
+// ── Guardar itinerario en una colección ──────────────────────────────────────
+// Un itinerario son varios tramos "ride", cada uno con su routeId. Guardarlo =
+// agregar esas rutas (únicas) a la colección que elija el usuario.
+const collectionService = new CollectionService()
+const showCollectionPicker = ref(false)
+const collections = ref([])
+const selectedCollectionId = ref(null)
+const savingCollection = ref(false)
+const itineraryToSave = ref(null)
+
+async function saveItinerary(it) {
+  itineraryToSave.value = it
+  selectedCollectionId.value = null
+  collections.value = []
+  showCollectionPicker.value = true
+  try {
+    collections.value = await collectionService.getCollectionsByUserId(getUserId())
+    if (collections.value.length) selectedCollectionId.value = collections.value[0].id
+  } catch (err) {
+    toast.add({ severity: 'error', summary: 'Error', detail: err?.friendlyMessage || 'No se pudieron cargar las colecciones.', life: 4000 })
+  }
+}
+
+async function confirmSaveToCollection() {
+  if (selectedCollectionId.value == null) {
+    toast.add({ severity: 'warn', summary: 'Elige una colección', detail: 'Selecciona una colección para guardar.', life: 3000 })
+    return
+  }
+  const routeIds = [...new Set((itineraryToSave.value?.segments || [])
+    .filter(s => s.kind === 'ride' && s.routeId != null)
+    .map(s => s.routeId))]
+  if (!routeIds.length) {
+    toast.add({ severity: 'warn', summary: 'Nada que guardar', detail: 'Este itinerario no tiene rutas.', life: 3000 })
+    return
+  }
+  savingCollection.value = true
+  try {
+    await Promise.all(routeIds.map(id => collectionService.addRouteToCollection(selectedCollectionId.value, id)))
+    toast.add({ severity: 'success', summary: 'Guardado', detail: `Se agregaron ${routeIds.length} ruta(s) a la colección.`, life: 3000 })
+    showCollectionPicker.value = false
+  } catch (err) {
+    toast.add({ severity: 'error', summary: 'Error', detail: err?.friendlyMessage || err?.data?.message || 'No se pudo guardar en la colección.', life: 4000 })
+  } finally {
+    savingCollection.value = false
+  }
 }
 
 // ── Reserva de un tramo ──────────────────────────────────────────────────────
@@ -364,4 +430,7 @@ function onLegPaid() {
 .field-error { color: #e5484d; font-size: 12px; }
 .reserve-hint { font-size: 0.8rem; color: var(--carbon-400); padding: 4px 0; }
 .reserve-empty { font-size: 0.82rem; color: #e5b84d; background: rgba(229,184,77,0.1); border: 1px solid rgba(229,184,77,0.3); border-radius: 8px; padding: 8px 10px; }
+.collection-body { display: flex; flex-direction: column; gap: 8px; }
+.collection-body label { font-size: 0.8rem; color: var(--carbon-400); }
+.collection-hint { font-size: 0.78rem; color: var(--carbon-400); }
 </style>
