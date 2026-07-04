@@ -12,7 +12,10 @@ export class BaseService {
         this.resourceEndpoint = resourceEndpoint;
         this.http = httpClient;
         this.retries = options.retries || 2;
-        this.timeout = options.timeout || 5000;
+        // Default 20s: el backend habla con OSRM y devuelve payloads pesados (rutas con
+        // geometría), así que 5s abortaba peticiones legítimas como falsos timeouts.
+        // Endpoints muy lentos (LLM/pagos) suben más el timeout por request.
+        this.timeout = options.timeout || 20000;
 
         // Configure HTTP client
         this.http.defaults.timeout = this.timeout;

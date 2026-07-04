@@ -11,8 +11,8 @@ export class RouteAlphaService extends BaseService {
                 throw new Error('ID de distrito inválido');
             }
 
-            // Usar el endpoint específico para obtener rutas por ID de distrito
-            const response = await this.http.get(`${this.resourcePath()}/district/${districtId}`);
+            // /routes devuelve payloads pesados (geometría de ruta) — supera los 5s por defecto.
+            const response = await this.http.get(`${this.resourcePath()}/district/${districtId}`, { timeout: 30000 });
             return response.data;
         }
         catch (error) {
@@ -20,7 +20,17 @@ export class RouteAlphaService extends BaseService {
         }
     }
 
-    // No es necesario definir getAll() aquí, ya que se hereda de BaseService.
+    // Override: /routes es pesado (geometría), el timeout por defecto de BaseService (5s)
+    // lo aborta. Usamos un timeout amplio solo para esta carga.
+    async getAll() {
+        try {
+            const response = await this.http.get(this.resourcePath(), { timeout: 30000 });
+            return response.data;
+        }
+        catch (error) {
+            throw this._enhanceError(error);
+        }
+    }
 }
 
 // Exportamos una única instancia (singleton) para ser usada en la aplicación.
