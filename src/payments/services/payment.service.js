@@ -10,6 +10,11 @@ export class PaymentService extends BaseService {
     return response.data
   }
 
+  async getPaymentsByDriverId(driverId) {
+    const response = await this.http.get(`${this.resourcePath()}/driver/${driverId}`)
+    return response.data
+  }
+
   async getPaymentById(paymentId) {
     const response = await this.http.get(`${this.resourcePath()}/${paymentId}`)
     return response.data

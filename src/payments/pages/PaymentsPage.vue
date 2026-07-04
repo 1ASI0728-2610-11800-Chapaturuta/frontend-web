@@ -2,8 +2,12 @@
   <div class="payments-page">
     <div class="page-header">
       <div>
-        <h1 class="page-title">Pagos</h1>
-        <p class="page-sub">Consulta pagos asociados a reservas y suscripciones.</p>
+        <h1 class="page-title">{{ isDriver ? 'Pagos recibidos' : 'Pagos' }}</h1>
+        <p class="page-sub">
+          {{ isDriver
+            ? 'Pagos de viajes y reservas que te realizaron tus pasajeros.'
+            : 'Consulta pagos asociados a reservas y suscripciones.' }}
+        </p>
       </div>
       <button class="refresh-btn" type="button" @click="load">
         <i class="pi pi-refresh"></i>
@@ -15,7 +19,7 @@
     <div v-else-if="error" class="state-card error">{{ error }}</div>
     <div v-else-if="payments.length === 0" class="state-card">
       <i class="pi pi-wallet"></i>
-      <span>No hay pagos registrados para este usuario.</span>
+      <span>{{ isDriver ? 'No has recibido pagos todavía.' : 'No hay pagos registrados para este usuario.' }}</span>
     </div>
 
     <div v-else class="payments-grid">
@@ -29,6 +33,7 @@
         </div>
         <div class="amount">{{ payment.currency }} {{ formatMoney(payment.amount) }}</div>
         <div class="meta-grid">
+          <div v-if="isDriver"><span>Pagó</span><strong>{{ payment.payerName || '-' }}</strong></div>
           <div><span>Metodo</span><strong>{{ payment.method }}</strong></div>
           <div><span>Creado</span><strong>{{ formatDate(payment.createdAt) }}</strong></div>
           <div><span>Confirmado</span><strong>{{ payment.confirmedAt ? formatDate(payment.confirmedAt) : 'Pendiente' }}</strong></div>
@@ -36,7 +41,7 @@
         </div>
         <div class="card-actions">
           <button
-            v-if="isPending(payment.status)"
+            v-if="!isDriver && isPending(payment.status)"
             class="pay-action"
             type="button"
             @click="openPay(payment)"
@@ -44,7 +49,7 @@
             <i class="pi pi-credit-card"></i> Pagar con tarjeta
           </button>
           <button
-            v-if="isPending(payment.status)"
+            v-if="!isDriver && isPending(payment.status)"
             class="ghost-action danger"
             type="button"
             :disabled="actingId === payment.id"
@@ -53,7 +58,7 @@
             <i class="pi pi-times-circle"></i> Marcar fallido
           </button>
           <button
-            v-if="isCompleted(payment.status)"
+            v-if="!isDriver && isCompleted(payment.status)"
             class="ghost-action"
             type="button"
             :disabled="actingId === payment.id"
@@ -146,7 +151,7 @@ import { useToast } from 'primevue/usetoast'
 import { PaymentService, RefundService } from '@/payments/services/payment.service.js'
 import PayuCardForm from '@/payments/components/payu-card-form.component.vue'
 import { required, maxAmount } from '@/shared/validation/validators.js'
-import { getUserId } from '@/shared/services/session.service.js'
+import { getUserId, getDriverId } from '@/shared/services/session.service.js'
 
 const service = new PaymentService()
 const refundService = new RefundService()
@@ -154,6 +159,11 @@ const payments = ref([])
 const loading = ref(false)
 const error = ref('')
 const toast = useToast()
+
+const currentUser = () => {
+  try { return JSON.parse(localStorage.getItem('user') || '{}') } catch { return {} }
+}
+const isDriver = computed(() => Number(currentUser().role) === 2)
 
 const showPay = ref(false)
 const selectedPayment = ref(null)
@@ -273,15 +283,24 @@ function statusClass(status) {
 }
 
 async function load() {
-  const userId = getUserId()
-  if (!userId) {
-    error.value = 'No hay usuario autenticado.'
-    return
-  }
   loading.value = true
   error.value = ''
   try {
-    payments.value = await service.getPaymentsByUserId(userId)
+    if (isDriver.value) {
+      const driverId = getDriverId()
+      if (!driverId) {
+        error.value = 'No hay conductor autenticado.'
+        return
+      }
+      payments.value = await service.getPaymentsByDriverId(driverId)
+    } else {
+      const userId = getUserId()
+      if (!userId) {
+        error.value = 'No hay usuario autenticado.'
+        return
+      }
+      payments.value = await service.getPaymentsByUserId(userId)
+    }
   } catch (err) {
     error.value = err?.data?.message || err?.message || 'No se pudieron cargar los pagos'
     payments.value = []
