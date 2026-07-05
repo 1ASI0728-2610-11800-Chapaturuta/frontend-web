@@ -9,7 +9,7 @@ import StarRating from "@/shared/components/StarRating.vue";
 import ScheduleDetailsItem from "@/discovery/components/route-details/schedule-details-item.component.vue";
 import PaymentCheckoutDialog from "@/payments/components/payment-checkout-dialog.component.vue";
 import { dni as dniRule, integerMin } from "@/shared/validation/validators.js";
-import { formatLima, limaLocalInputToUtcIso, validateAgainstSchedules } from "@/shared/services/lima-time.js";
+import { formatLima, validateAgainstSchedules } from "@/shared/services/lima-time.js";
 
 export default {
   name: "route-complete-detail",
@@ -49,7 +49,6 @@ export default {
       loadingJoinable: false,
       selectedTripId: null,
       showBook: false,
-      bookStartTime: '',
       bookSeats: 1
     };
   },
@@ -89,15 +88,17 @@ export default {
     bookSeatsError() {
       return integerMin(this.bookSeats, 1, 'Los asientos');
     },
-    // Valida en cliente la fecha/hora elegida contra los horarios de atención de la ruta.
-    bookScheduleError() {
-      if (!this.bookStartTime) return null;
-      const [datePart, timePart] = this.bookStartTime.split('T');
-      if (!datePart || !timePart) return null;
-      const [year, month, day] = datePart.split('-').map(Number);
-      const [hour, minute] = timePart.split(':').map(Number);
-      const result = validateAgainstSchedules(this.route?.schedules, { year, month: month - 1, day, hour, minute });
-      return result.valid ? null : result.message;
+    // "Hacer viaje" es para viajar AHORA (ya estás en el paradero): no se elige fecha.
+    // Validamos la hora actual de Lima contra el horario de atención de la ruta.
+    routeOpenNow() {
+      const now = new Date(Date.now() - 5 * 3600 * 1000); // Lima = UTC-5; campos UTC = hora Lima
+      return validateAgainstSchedules(this.route?.schedules, {
+        year: now.getUTCFullYear(),
+        month: now.getUTCMonth(),
+        day: now.getUTCDate(),
+        hour: now.getUTCHours(),
+        minute: now.getUTCMinutes()
+      });
     },
     ratingAverage() {
       const s = this.driverSummary;
@@ -255,12 +256,12 @@ export default {
         this.$toast?.add({ severity: 'warn', summary: 'Sin datos', detail: 'La ruta no tiene paraderos válidos.', life: 3000 });
         return;
       }
-      this.bookStartTime = '';
       this.bookSeats = 1;
       this.showBook = true;
     },
     async bookTrip() {
-      if (this.bookScheduleError || this.bookSeatsError || !this.bookStartTime) return;
+      // Sin fecha: el viaje es AHORA. Si la ruta está fuera de horario, hay que reservar.
+      if (!this.routeOpenNow.valid || this.bookSeatsError) return;
       this.booking = true;
       try {
         await this.tripService.createTrip({
@@ -268,8 +269,8 @@ export default {
           fkIdOriginStop: this.originStop.id,
           fkIdDestinationStop: this.destinationStop.id,
           price: this.route.price,
-          availableSeats: this.bookSeats,
-          startTime: limaLocalInputToUtcIso(this.bookStartTime)
+          availableSeats: this.bookSeats
+          // startTime omitido -> el backend usa la hora actual y la valida contra el horario.
         });
         this.showBook = false;
         this.$toast?.add({ severity: 'success', summary: 'Viaje registrado', detail: 'Tu viaje fue registrado correctamente.', life: 3000 });
@@ -490,13 +491,19 @@ export default {
       :style="{ width: '24rem' }"
     >
       <div class="picker-body">
-        <label class="picker-label">Fecha y hora</label>
-        <input v-model="bookStartTime" type="datetime-local" class="picker-select" />
-        <small v-if="bookScheduleError" class="field-error">{{ bookScheduleError }}</small>
+        <p class="book-now-hint">Para viajar <strong>ahora</strong> (ya estás en el paradero). Se registra con la hora actual.</p>
 
-        <label class="picker-label">Asientos</label>
-        <input v-model.number="bookSeats" type="number" min="1" class="picker-select" />
-        <small v-if="bookSeatsError" class="field-error">{{ bookSeatsError }}</small>
+        <!-- Fuera de horario ahora: no se puede hacer viaje, hay que reservar. -->
+        <div v-if="!routeOpenNow.valid" class="book-closed">
+          {{ routeOpenNow.message || 'La ruta está fuera de su horario de atención ahora mismo.' }}
+          Usa la opción <strong>Reservar</strong> para tomar un viaje publicado.
+        </div>
+
+        <template v-else>
+          <label class="picker-label">Asientos</label>
+          <input v-model.number="bookSeats" type="number" min="1" class="picker-select" />
+          <small v-if="bookSeatsError" class="field-error">{{ bookSeatsError }}</small>
+        </template>
       </div>
       <template #footer>
         <pb-Button label="Cancelar" text @click="showBook = false" />
@@ -504,7 +511,7 @@ export default {
           label="Confirmar"
           icon="pi pi-check"
           :loading="booking"
-          :disabled="!bookStartTime || !!bookScheduleError || !!bookSeatsError"
+          :disabled="!routeOpenNow.valid || !!bookSeatsError"
           @click="bookTrip"
         />
       </template>
@@ -603,6 +610,10 @@ export default {
   margin-top: 0.5rem;
 }
 .book-hint { font-size: 0.8rem; color: var(--carbon-400); }
+.book-now-hint { font-size: 0.85rem; color: var(--carbon-300); line-height: 1.4; }
+.book-now-hint strong { color: var(--gold-300); }
+.book-closed { font-size: 0.85rem; color: #e5b84d; background: rgba(229,184,77,0.1); border: 1px solid rgba(229,184,77,0.3); border-radius: 8px; padding: 10px 12px; line-height: 1.4; }
+.book-closed strong { color: var(--gold-300); }
 .action-row { display: flex; flex-wrap: wrap; gap: 10px; }
 .picker-body { display: flex; flex-direction: column; gap: 6px; }
 .picker-label { font-size: 0.8rem; color: var(--carbon-400); }
