@@ -22,7 +22,7 @@ export class TripService extends BaseService {
     return response.data
   }
 
-  async createTrip({ fkIdRoute, fkIdOriginStop, fkIdDestinationStop, price, availableSeats = 1 }) {
+  async createTrip({ fkIdRoute, fkIdOriginStop, fkIdDestinationStop, price, availableSeats = 1, startTime }) {
     const user = JSON.parse(localStorage.getItem('user') || '{}')
     const response = await this.http.post(this.resourcePath(), {
       fkIdUser: user.id,
@@ -31,13 +31,14 @@ export class TripService extends BaseService {
       fkIdOriginStop,
       fkIdDestinationStop,
       price,
-      availableSeats
+      availableSeats,
+      startTime
     })
     return response.data
   }
 
   // Driver publishes a shared trip for a route with N seats of capacity.
-  async publishTrip({ fkIdRoute, fkIdOriginStop, fkIdDestinationStop, price, seats, fkIdDriver }) {
+  async publishTrip({ fkIdRoute, fkIdOriginStop, fkIdDestinationStop, price, seats, fkIdDriver, startTime }) {
     const user = JSON.parse(localStorage.getItem('user') || '{}')
     const response = await this.http.post(`${this.resourcePath()}/publish`, {
       fkIdUser: user.id,
@@ -46,7 +47,8 @@ export class TripService extends BaseService {
       fkIdOriginStop,
       fkIdDestinationStop,
       price,
-      seats: Number(seats)
+      seats: Number(seats),
+      startTime
     })
     return response.data
   }

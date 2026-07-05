@@ -152,6 +152,7 @@ import { PaymentService, RefundService } from '@/payments/services/payment.servi
 import PayuCardForm from '@/payments/components/payu-card-form.component.vue'
 import { required, maxAmount } from '@/shared/validation/validators.js'
 import { getUserId, getDriverId } from '@/shared/services/session.service.js'
+import { formatLima } from '@/shared/services/lima-time.js'
 
 const service = new PaymentService()
 const refundService = new RefundService()
@@ -275,7 +276,7 @@ function formatMoney(value) {
 
 function formatDate(value) {
   if (!value) return '-'
-  return new Intl.DateTimeFormat('es-PE', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
+  return formatLima(value, { dateStyle: 'medium', timeStyle: 'short' })
 }
 
 function statusClass(status) {

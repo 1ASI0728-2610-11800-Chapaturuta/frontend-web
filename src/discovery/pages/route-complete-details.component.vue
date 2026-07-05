@@ -9,6 +9,7 @@ import StarRating from "@/shared/components/StarRating.vue";
 import ScheduleDetailsItem from "@/discovery/components/route-details/schedule-details-item.component.vue";
 import PaymentCheckoutDialog from "@/payments/components/payment-checkout-dialog.component.vue";
 import { dni as dniRule, integerMin } from "@/shared/validation/validators.js";
+import { formatLima, limaLocalInputToUtcIso, validateAgainstSchedules } from "@/shared/services/lima-time.js";
 
 export default {
   name: "route-complete-detail",
@@ -46,7 +47,10 @@ export default {
       checkoutAmount: 0,
       joinableTrips: [],
       loadingJoinable: false,
-      selectedTripId: null
+      selectedTripId: null,
+      showBook: false,
+      bookStartTime: '',
+      bookSeats: 1
     };
   },
   computed: {
@@ -81,6 +85,19 @@ export default {
     },
     dniError() {
       return dniRule(this.reserveDocument);
+    },
+    bookSeatsError() {
+      return integerMin(this.bookSeats, 1, 'Los asientos');
+    },
+    // Valida en cliente la fecha/hora elegida contra los horarios de atención de la ruta.
+    bookScheduleError() {
+      if (!this.bookStartTime) return null;
+      const [datePart, timePart] = this.bookStartTime.split('T');
+      if (!datePart || !timePart) return null;
+      const [year, month, day] = datePart.split('-').map(Number);
+      const [hour, minute] = timePart.split(':').map(Number);
+      const result = validateAgainstSchedules(this.route?.schedules, { year, month: month - 1, day, hour, minute });
+      return result.valid ? null : result.message;
     },
     ratingAverage() {
       const s = this.driverSummary;
@@ -231,27 +248,36 @@ export default {
     },
     formatTripWhen(value) {
       if (!value) return '';
-      try {
-        return new Date(value).toLocaleString('es-PE', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
-      } catch { return String(value); }
+      return formatLima(value, { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
     },
-    async bookTrip() {
+    openBook() {
       if (!this.route || !this.originStop || !this.destinationStop) {
         this.$toast?.add({ severity: 'warn', summary: 'Sin datos', detail: 'La ruta no tiene paraderos válidos.', life: 3000 });
         return;
       }
+      this.bookStartTime = '';
+      this.bookSeats = 1;
+      this.showBook = true;
+    },
+    async bookTrip() {
+      if (this.bookScheduleError || this.bookSeatsError || !this.bookStartTime) return;
       this.booking = true;
       try {
         await this.tripService.createTrip({
           fkIdRoute: this.route.id,
           fkIdOriginStop: this.originStop.id,
           fkIdDestinationStop: this.destinationStop.id,
-          price: this.route.price
+          price: this.route.price,
+          availableSeats: this.bookSeats,
+          startTime: limaLocalInputToUtcIso(this.bookStartTime)
         });
+        this.showBook = false;
         this.$toast?.add({ severity: 'success', summary: 'Viaje registrado', detail: 'Tu viaje fue registrado correctamente.', life: 3000 });
         this.$router.push({ name: 'TripHistory' });
       } catch (err) {
-        const detail = err?.data?.message || err?.message || 'No se pudo registrar el viaje.';
+        // El backend rechaza fuera de horario con 409 ProblemDetails (mensaje en `detail`).
+        // friendlyMessage (BaseService) ya lee `detail`; incluimos ambos como respaldo.
+        const detail = err?.friendlyMessage || err?.data?.detail || err?.data?.message || err?.message || 'No se pudo registrar el viaje.';
         this.$toast?.add({ severity: 'error', summary: 'Error', detail, life: 4000 });
       } finally {
         this.booking = false;
@@ -352,7 +378,7 @@ export default {
             label="Hacer viaje"
             icon="pi pi-directions"
             :loading="booking"
-            @click="bookTrip"
+            @click="openBook"
           />
           <pb-Button
             label="Reservar asiento"
@@ -453,6 +479,33 @@ export default {
           icon="pi pi-arrow-right"
           :disabled="!joinableTrips.length || !selectedTrip || !!seatsError || !!dniError"
           @click="confirmReserve"
+        />
+      </template>
+    </pb-Dialog>
+
+    <pb-Dialog
+      v-model:visible="showBook"
+      modal
+      header="Hacer viaje"
+      :style="{ width: '24rem' }"
+    >
+      <div class="picker-body">
+        <label class="picker-label">Fecha y hora</label>
+        <input v-model="bookStartTime" type="datetime-local" class="picker-select" />
+        <small v-if="bookScheduleError" class="field-error">{{ bookScheduleError }}</small>
+
+        <label class="picker-label">Asientos</label>
+        <input v-model.number="bookSeats" type="number" min="1" class="picker-select" />
+        <small v-if="bookSeatsError" class="field-error">{{ bookSeatsError }}</small>
+      </div>
+      <template #footer>
+        <pb-Button label="Cancelar" text @click="showBook = false" />
+        <pb-Button
+          label="Confirmar"
+          icon="pi pi-check"
+          :loading="booking"
+          :disabled="!bookStartTime || !!bookScheduleError || !!bookSeatsError"
+          @click="bookTrip"
         />
       </template>
     </pb-Dialog>

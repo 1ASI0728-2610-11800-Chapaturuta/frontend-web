@@ -91,6 +91,7 @@ import { TripService } from '@/trips/services/trip.service.js'
 import { PaymentService } from '@/payments/services/payment.service.js'
 import PaymentCheckoutDialog from '@/payments/components/payment-checkout-dialog.component.vue'
 import { getUserId, getDriverId } from '@/shared/services/session.service.js'
+import { formatLima } from '@/shared/services/lima-time.js'
 
 const trips     = ref([])
 const isLoading = ref(false)
@@ -112,9 +113,7 @@ const destinationLabel = (t) => t.destinationName || t.destination || ''
 
 const formatDateTime = (value) => {
   if (!value) return ''
-  return new Date(value).toLocaleString('es-PE', {
-    day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
-  })
+  return formatLima(value, { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
 
 const normalizeStatus = (s) => String(s ?? '').toLowerCase().replace(/[\s_]/g, '')

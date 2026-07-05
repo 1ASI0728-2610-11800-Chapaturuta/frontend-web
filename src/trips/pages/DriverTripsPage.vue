@@ -18,16 +18,21 @@
             </option>
           </select>
         </div>
+        <div class="pf-field">
+          <label>Fecha y hora</label>
+          <input v-model="publishStartTime" type="datetime-local" class="pf-input" />
+        </div>
         <div class="pf-field seats">
           <label>Asientos</label>
           <div class="pf-input pf-readonly" title="Capacidad de tu vehículo (registro)">
             <i class="pi pi-users"></i> {{ vehicleCapacity ?? '—' }}
           </div>
         </div>
-        <button class="act-btn act-start pf-btn" :disabled="publishing || !publishRouteId || !vehicleCapacity" @click="publish">
+        <button class="act-btn act-start pf-btn" :disabled="publishing || !publishRouteId || !vehicleCapacity || !!publishScheduleError" @click="publish">
           <i class="pi pi-megaphone"></i> {{ publishing ? 'Publicando…' : 'Publicar' }}
         </button>
       </div>
+      <small v-if="publishScheduleError" class="field-error">{{ publishScheduleError }}</small>
       <p class="pf-hint">Los asientos se toman de la capacidad de tu vehículo registrado. Para cambiarla, edita tu vehículo en tu perfil.</p>
       <p v-if="!routes.length && !loadingRoutes" class="pf-hint">No tienes rutas. Crea una en "Rutas" primero.</p>
     </section>
@@ -120,12 +125,13 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useToast } from 'primevue/usetoast'
 import { TripService } from '@/trips/services/trip.service.js'
 import { RouteService } from '@/network/services/route.service.js'
 import { DriverService } from '@/driver/services/driver.service.js'
 import { getDriverId, getUserId } from '@/shared/services/session.service.js'
+import { formatLima, limaLocalInputToUtcIso, validateAgainstSchedules } from '@/shared/services/lima-time.js'
 
 const svc = new TripService()
 const routeSvc = new RouteService()
@@ -144,6 +150,19 @@ const loadingRoutes = ref(false)
 const publishRouteId = ref(null)
 const vehicleCapacity = ref(null) // capacidad del vehículo registrado (única fuente de asientos)
 const publishing = ref(false)
+const publishStartTime = ref('') // valor del <input type="datetime-local"> (hora de Lima)
+
+// La ruta elegida trae sus horarios de atención (schedules) para validar en cliente.
+const publishRoute = computed(() => routes.value.find(r => r.id === publishRouteId.value) || null)
+const publishScheduleError = computed(() => {
+  if (!publishStartTime.value) return null
+  const [datePart, timePart] = publishStartTime.value.split('T')
+  if (!datePart || !timePart) return null
+  const [year, month, day] = datePart.split('-').map(Number)
+  const [hour, minute] = timePart.split(':').map(Number)
+  const result = validateAgainstSchedules(publishRoute.value?.schedules, { year, month: month - 1, day, hour, minute })
+  return result.valid ? null : result.message
+})
 
 // Lee la capacidad del vehículo del perfil del conductor; es la fuente de asientos al publicar.
 const loadVehicleCapacity = async () => {
@@ -187,6 +206,10 @@ const publish = async () => {
     toast.add({ severity: 'warn', summary: 'Ruta inválida', detail: 'La ruta necesita origen y destino.', life: 4000 })
     return
   }
+  if (publishScheduleError.value) {
+    toast.add({ severity: 'warn', summary: 'Horario inválido', detail: publishScheduleError.value, life: 4000 })
+    return
+  }
   publishing.value = true
   try {
     // El backend fija los asientos desde la capacidad del vehículo; enviamos la conocida solo informativa.
@@ -196,10 +219,12 @@ const publish = async () => {
       fkIdOriginStop: stops[0].id,
       fkIdDestinationStop: stops[stops.length - 1].id,
       price: route.price,
-      seats: vehicleCapacity.value
+      seats: vehicleCapacity.value,
+      startTime: limaLocalInputToUtcIso(publishStartTime.value)
     })
     toast.add({ severity: 'success', summary: 'Viaje publicado', detail: `${vehicleCapacity.value} asientos disponibles`, life: 3000 })
     publishRouteId.value = null
+    publishStartTime.value = ''
     await load()
   } catch (e) {
     toast.add({ severity: 'error', summary: 'Error', detail: e?.data?.message || e?.friendlyMessage || 'No se pudo publicar el viaje.', life: 4000 })
@@ -213,9 +238,7 @@ const destinationLabel = (t) => t.destinationName || t.destination || ''
 
 const formatDateTime = (value) => {
   if (!value) return ''
-  return new Date(value).toLocaleString('es-PE', {
-    day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
-  })
+  return formatLima(value, { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
 
 const normalizeStatus = (s) => String(s ?? '').toLowerCase().replace(/[\s_]/g, '')
@@ -343,6 +366,7 @@ onMounted(load)
 .pf-readonly { display: inline-flex; align-items: center; gap: 6px; color: var(--gold-500); background: var(--carbon-900, #14151a); cursor: default; }
 .pf-btn { white-space: nowrap; }
 .pf-hint { font-size: 0.8rem; color: var(--carbon-500); margin-top: 8px; }
+.field-error { color: #e5484d; font-size: 12px; display: block; margin-top: 6px; }
 
 .trip-actions { display: flex; gap: 6px; margin-top: 4px; }
 .act-btn {

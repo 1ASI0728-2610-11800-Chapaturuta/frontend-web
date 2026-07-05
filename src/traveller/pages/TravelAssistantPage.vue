@@ -173,6 +173,7 @@ import { CollectionService } from '@/collections/services/collection.service.js'
 import PaymentCheckoutDialog from '@/payments/components/payment-checkout-dialog.component.vue'
 import { getUserId } from '@/shared/services/session.service.js'
 import { dni as dniRule, integerMin } from '@/shared/validation/validators.js'
+import { formatLima } from '@/shared/services/lima-time.js'
 
 // Feature flag: alineado con "Assistant:Enabled" del backend.
 // En false muestra el mock-up "Próximamente"; en true habilita el chat (Premium).
@@ -292,7 +293,7 @@ const dniError = computed(() => dniRule(reserveDni.value))
 function tripOptionLabel(t) {
   const seats = t.availableSeats ?? 0
   const price = Number(t.price ?? reserveSeg.value?.price ?? 0).toFixed(2)
-  const when = t.startTime ? new Date(t.startTime).toLocaleString('es-PE', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : ''
+  const when = t.startTime ? formatLima(t.startTime, { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : ''
   return `${when ? when + ' · ' : ''}${seats} asiento(s) · S/ ${price}`
 }
 

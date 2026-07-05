@@ -45,6 +45,7 @@
 import { onMounted, ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { PaymentService } from '@/payments/services/payment.service.js'
+import { formatLima } from '@/shared/services/lima-time.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -60,7 +61,7 @@ const amountLabel = computed(() => Number(payment.value?.amount || 0).toFixed(2)
 const dateLabel = computed(() => {
   const raw = payment.value?.confirmedAt || payment.value?.createdAt
   if (!raw) return '-'
-  try { return new Date(raw).toLocaleString('es-PE') } catch { return raw }
+  try { return formatLima(raw) } catch { return raw }
 })
 
 function goHome() {
