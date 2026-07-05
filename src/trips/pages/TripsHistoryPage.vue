@@ -42,6 +42,12 @@
               @click="openPay(trip)"
             ><i class="pi pi-wallet"></i> Pagar viaje</button>
           </div>
+          <div v-if="canRate(trip)" class="trip-actions">
+            <button
+              class="act-btn act-rate"
+              @click="openRate(trip)"
+            ><i class="pi pi-star"></i> Calificar</button>
+          </div>
           <div v-if="isDriver" class="trip-actions">
             <button
               v-if="normalizeStatus(trip.status) === 'pending'"
@@ -81,6 +87,23 @@
       :pay-provider="payTripProvider"
       @paid="onTripPaid"
     />
+
+    <!-- Calificar al conductor de un viaje completado -->
+    <pb-Dialog v-model:visible="showRate" modal header="Calificar viaje" :style="{ width: '24rem' }">
+      <div v-if="rateTrip" class="rate-body">
+        <p class="rate-route">{{ rateTrip.routeName || 'Viaje' }} · {{ rateTrip.driverName }}</p>
+        <label>Tu calificación</label>
+        <StarRating v-model="rateScore" />
+        <label>Comentario (opcional)</label>
+        <textarea v-model="rateComment" rows="3" maxlength="500" class="rate-input"
+          placeholder="¿Cómo estuvo el viaje?"></textarea>
+      </div>
+      <template #footer>
+        <pb-Button label="Cancelar" text @click="showRate = false" />
+        <pb-Button label="Enviar reseña" icon="pi pi-star"
+          :disabled="rateScore < 1" :loading="savingRate" @click="submitRate" />
+      </template>
+    </pb-Dialog>
   </div>
 </template>
 
@@ -89,7 +112,9 @@ import { ref, computed, onMounted } from 'vue'
 import { useToast } from 'primevue/usetoast'
 import { TripService } from '@/trips/services/trip.service.js'
 import { PaymentService } from '@/payments/services/payment.service.js'
+import { RatingService } from '@/ratings/services/rating.service.js'
 import PaymentCheckoutDialog from '@/payments/components/payment-checkout-dialog.component.vue'
+import StarRating from '@/shared/components/StarRating.vue'
 import { getUserId, getDriverId } from '@/shared/services/session.service.js'
 import { formatLima } from '@/shared/services/lima-time.js'
 
@@ -101,7 +126,16 @@ const showPay   = ref(false)
 const payTrip   = ref(null)
 const svc = new TripService()
 const paymentSvc = new PaymentService()
+const ratingSvc = new RatingService()
 const toast = useToast()
+
+// Reseñas: viajes que el pasajero ya calificó (para no calificar dos veces).
+const ratedTripIds = ref(new Set())
+const showRate = ref(false)
+const rateTrip = ref(null)
+const rateScore = ref(0)
+const rateComment = ref('')
+const savingRate = ref(false)
 
 const currentUser = () => {
   try { return JSON.parse(localStorage.getItem('user') || '{}') } catch { return {} }
@@ -163,6 +197,7 @@ const load = async () => {
       if (userId) {
         trips.value = await svc.getTripHistoryByUserId(userId)
         await loadPaidTrips(userId)
+        await loadRatedTrips(userId)
       }
     }
   } catch (e) {
@@ -217,6 +252,61 @@ const payTripProvider = async (method) => {
 const onTripPaid = async () => {
   toast.add({ severity: 'success', summary: 'Viaje pagado', life: 2500 })
   await load()
+}
+
+// ── Reseñas del viajero ──────────────────────────────────────────────────────
+const loadRatedTrips = async (userId) => {
+  try {
+    const mine = await ratingSvc.getByUser(userId)
+    ratedTripIds.value = new Set((mine || []).map(r => Number(r.fkIdTrip)))
+  } catch {
+    ratedTripIds.value = new Set()
+  }
+}
+
+// Se puede calificar un viaje COMPLETADO donde hubo conductor y que aún no calificaste.
+const canRate = (trip) =>
+  !isDriver.value && normalizeStatus(trip.status) === 'completed'
+  && !!trip.driverName && !ratedTripIds.value.has(Number(trip.id))
+
+const openRate = (trip) => {
+  rateTrip.value = trip
+  rateScore.value = 0
+  rateComment.value = ''
+  showRate.value = true
+}
+
+const submitRate = async () => {
+  const trip = rateTrip.value
+  if (!trip) return
+  if (rateScore.value < 1) {
+    toast.add({ severity: 'warn', summary: 'Elige una calificación', detail: 'Selecciona de 1 a 5 estrellas.', life: 3000 })
+    return
+  }
+  savingRate.value = true
+  try {
+    // El historial no trae el driverId; lo resolvemos del viaje (GET /trips/{id}).
+    const full = await svc.getById(trip.id)
+    const driverId = full?.fkIdDriver
+    if (!driverId) {
+      toast.add({ severity: 'warn', summary: 'Sin conductor', detail: 'Este viaje no tiene un conductor asignado para calificar.', life: 3500 })
+      return
+    }
+    await ratingSvc.createRating({
+      fkIdUser: getUserId(),
+      fkIdDriver: driverId,
+      fkIdTrip: trip.id,
+      score: rateScore.value,
+      comment: rateComment.value?.trim() || null
+    })
+    ratedTripIds.value = new Set([...ratedTripIds.value, Number(trip.id)])
+    showRate.value = false
+    toast.add({ severity: 'success', summary: 'Gracias por tu reseña', life: 2500 })
+  } catch (e) {
+    toast.add({ severity: 'error', summary: 'Error', detail: e?.friendlyMessage || e?.data?.message || 'No se pudo enviar la reseña.', life: 4000 })
+  } finally {
+    savingRate.value = false
+  }
 }
 
 const doAction = async (trip, action) => {
@@ -301,6 +391,13 @@ onMounted(load)
 .act-complete { background: rgba(74,222,128,0.12); color: var(--success); border-color: rgba(74,222,128,0.3); }
 .act-cancel   { background: rgba(248,113,113,0.12); color: var(--danger); border-color: rgba(248,113,113,0.3); }
 .act-pay      { background: rgba(139,92,246,0.14); color: var(--gold-400); border-color: rgba(139,92,246,0.35); }
+.act-rate     { background: rgba(139,92,246,0.10); color: var(--gold-500); border-color: rgba(139,92,246,0.3); cursor: pointer; }
+
+.rate-body { display: flex; flex-direction: column; gap: 8px; }
+.rate-route { color: var(--carbon-100); font-weight: 600; font-size: 0.9rem; }
+.rate-body label { font-size: 0.8rem; color: var(--carbon-400); }
+.rate-input { padding: 10px 12px; background: var(--carbon-900); border: 1px solid var(--carbon-700); border-radius: 8px; color: var(--carbon-100); font-family: var(--font-family); resize: vertical; }
+.rate-input:focus { outline: none; border-color: var(--gold-500); }
 
 .skeleton-list { display: flex; flex-direction: column; gap: 10px; }
 .sk-row { height: 68px; background: var(--carbon-800); border-radius: var(--radius-lg); }

@@ -49,6 +49,25 @@
         </div>
       </section>
 
+      <!-- Reseñas recibidas -->
+      <section class="section">
+        <h2 class="section-title">
+          Reseñas recibidas
+          <span v-if="ratingSummary?.count" class="rev-avg"><i class="pi pi-star-fill"></i> {{ Number(ratingSummary.average).toFixed(1) }} · {{ ratingSummary.count }} reseña(s)</span>
+        </h2>
+        <div v-if="!reviews.length" class="reviews-empty">Aún no tienes reseñas de pasajeros.</div>
+        <div v-else class="reviews-list">
+          <div v-for="r in reviews" :key="r.id" class="review-card">
+            <div class="review-top">
+              <StarRating :model-value="r.score" readonly />
+              <span class="review-date">{{ formatReviewDate(r.createdAt) }}</span>
+            </div>
+            <p v-if="r.comment" class="review-comment">{{ r.comment }}</p>
+            <span class="review-trip">Viaje #{{ r.fkIdTrip }}</span>
+          </div>
+        </div>
+      </section>
+
       <!-- Analítica IA (fake) -->
       <section class="section">
         <div class="ia-head">
@@ -95,7 +114,9 @@ import { RouteService } from '@/network/services/route.service.js'
 import { TripService } from '@/trips/services/trip.service.js'
 import { ReservationService } from '@/reservations/services/reservation.service.js'
 import { RatingService } from '@/ratings/services/rating.service.js'
+import StarRating from '@/shared/components/StarRating.vue'
 import { getCurrentUser, getDriverId, saveCurrentUser } from '@/shared/services/session.service.js'
+import { formatLima } from '@/shared/services/lima-time.js'
 
 const { isPremium, loading: premiumLoading, loaded: premiumLoaded } = usePremiumStatus()
 
@@ -104,6 +125,7 @@ const driverName = ref('')
 const trips = ref([])
 const reservations = ref([])
 const ratingSummary = ref(null)
+const reviews = ref([])
 const routesCount = ref(0)
 const stopsCount = ref(0)
 
@@ -133,16 +155,20 @@ async function load() {
         driverName.value = `${d.firstName || ''} ${d.lastName || ''}`.trim()
       } catch { /* opcional */ }
     }
-    const [tripsRes, resRes, ratingRes, routesRes, stopsRes] = await Promise.all([
+    const [tripsRes, resRes, ratingRes, reviewsRes, routesRes, stopsRes] = await Promise.all([
       new TripService().getTripHistoryByDriverId(driverId).catch(() => []),
       new ReservationService().getByDriver(driverId).catch(() => []),
       new RatingService().getDriverSummary(driverId).catch(() => null),
+      new RatingService().getByDriver(driverId).catch(() => []),
       new RouteService().loadRoutesByDriverId(driverId).catch(() => []),
       new StopService().getStopsByDriverId(driverId).catch(() => [])
     ])
     trips.value = Array.isArray(tripsRes) ? tripsRes : []
     reservations.value = Array.isArray(resRes) ? resRes : []
     ratingSummary.value = ratingRes
+    // Más recientes primero.
+    reviews.value = (Array.isArray(reviewsRes) ? reviewsRes : [])
+      .slice().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
     routesCount.value = Array.isArray(routesRes) ? routesRes.length : 0
     stopsCount.value = Array.isArray(stopsRes) ? stopsRes.length : 0
   } finally {
@@ -156,6 +182,7 @@ watch([premiumLoaded, isPremium], ([loaded, premium]) => {
 }, { immediate: true })
 
 const norm = (s) => String(s ?? '').toLowerCase().replace(/[\s_]/g, '')
+const formatReviewDate = (v) => v ? formatLima(v, { day: '2-digit', month: 'short', year: 'numeric' }) : ''
 
 const kpis = computed(() => {
   const t = trips.value
@@ -301,6 +328,16 @@ const insights = computed(() => {
 .insight strong { display: block; color: var(--carbon-100); font-size: 0.9rem; }
 .insight span { color: var(--carbon-400); font-size: 0.8rem; line-height: 1.4; }
 
+.rev-avg { margin-left: 10px; font-size: 0.85rem; font-weight: 700; color: var(--gold-400); }
+.rev-avg i { font-size: 0.8rem; }
+.reviews-empty { color: var(--carbon-400); font-size: 0.88rem; background: var(--carbon-800); border: 1px solid var(--carbon-700); border-radius: var(--radius-lg); padding: 1.25rem; }
+.reviews-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+.review-card { background: var(--carbon-800); border: 1px solid var(--carbon-700); border-radius: var(--radius-lg); padding: 1rem 1.1rem; display: flex; flex-direction: column; gap: 6px; }
+.review-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.review-date { font-size: 0.75rem; color: var(--carbon-500); }
+.review-comment { color: var(--carbon-100); font-size: 0.88rem; line-height: 1.4; }
+.review-trip { font-size: 0.72rem; color: var(--carbon-500); }
+
 .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 .chart-card { background: var(--carbon-800); border: 1px solid var(--carbon-700); border-radius: var(--radius-lg); padding: 1.25rem; }
 .chart-card h3 { color: var(--carbon-200); font-size: 0.95rem; margin-bottom: 0.75rem; }
@@ -309,6 +346,6 @@ const insights = computed(() => {
 .spinner { width: 16px; height: 16px; border: 2px solid var(--gold-400); border-top-color: transparent; border-radius: 50%; animation: spin 0.7s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-@media (max-width: 1000px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } .ia-insights, .charts-grid { grid-template-columns: 1fr; } }
+@media (max-width: 1000px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } .ia-insights, .charts-grid, .reviews-list { grid-template-columns: 1fr; } }
 @media (max-width: 560px) { .kpi-grid { grid-template-columns: 1fr; } }
 </style>

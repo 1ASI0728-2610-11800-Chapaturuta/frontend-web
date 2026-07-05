@@ -17,15 +17,15 @@
 
     <div class="profile-stats">
       <div class="stat-box">
-        <span class="stat-num">0</span>
+        <span class="stat-num">{{ loading ? '—' : stats.trips }}</span>
         <span class="stat-label">Viajes</span>
       </div>
       <div class="stat-box">
-        <span class="stat-num">0</span>
+        <span class="stat-num">{{ loading ? '—' : stats.collections }}</span>
         <span class="stat-label">Colecciones</span>
       </div>
       <div class="stat-box">
-        <span class="stat-num">0</span>
+        <span class="stat-num">{{ loading ? '—' : stats.reviews }}</span>
         <span class="stat-label">Reseñas</span>
       </div>
     </div>
@@ -52,16 +52,40 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { APP_ROUTES } from '@/shared/services/routes.js'
+import { TripService } from '@/trips/services/trip.service.js'
+import { CollectionService } from '@/collections/services/collection.service.js'
+import { RatingService } from '@/ratings/services/rating.service.js'
+import { getUserId } from '@/shared/services/session.service.js'
 
 const router = useRouter()
 const user   = ref(JSON.parse(localStorage.getItem('user') || '{}'))
 
+const stats = ref({ trips: 0, collections: 0, reviews: 0 })
+const loading = ref(true)
+
 const initials = computed(() => {
   const name = user.value.username || ''
   return name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase() || 'U'
+})
+
+// KPIs reales del viajero: viajes, colecciones y reseñas hechas.
+onMounted(async () => {
+  const userId = getUserId()
+  if (!userId) { loading.value = false; return }
+  const [trips, collections, reviews] = await Promise.all([
+    new TripService().getTripHistoryByUserId(userId).catch(() => []),
+    new CollectionService().getCollectionsByUserId(userId).catch(() => []),
+    new RatingService().getByUser(userId).catch(() => [])
+  ])
+  stats.value = {
+    trips: Array.isArray(trips) ? trips.length : 0,
+    collections: Array.isArray(collections) ? collections.length : 0,
+    reviews: Array.isArray(reviews) ? reviews.length : 0
+  }
+  loading.value = false
 })
 
 const logout = () => {
