@@ -421,7 +421,7 @@ async function load() {
     history.value = subscriptionHistory
     await loadActive(userId)
   } catch (err) {
-    error.value = err?.data?.message || err?.message || 'No se pudieron cargar las suscripciones'
+    error.value = err?.friendlyMessage || err?.data?.detail || err?.data?.message || err?.message || 'No se pudieron cargar las suscripciones'
   } finally {
     loading.value = false
   }
@@ -455,7 +455,7 @@ async function chooseMethod(method) {
     if (!paymentId.value) throw new Error('No se genero el pago de la suscripcion')
     checkoutStep.value = method === 'Card' ? 'card' : 'qr'
   } catch (err) {
-    checkoutError.value = err?.data?.message || err?.message || 'No se pudo iniciar el pago'
+    checkoutError.value = err?.friendlyMessage || err?.data?.detail || err?.data?.message || err?.message || 'No se pudo iniciar el pago'
     checkoutStep.value = 'method'
   }
 }
@@ -495,7 +495,7 @@ async function cancel() {
     await subscriptionService.cancel(activeSubscription.value.id)
     await load()
   } catch (err) {
-    error.value = err?.data?.message || err?.message || 'No se pudo cancelar la suscripcion'
+    error.value = err?.friendlyMessage || err?.data?.detail || err?.data?.message || err?.message || 'No se pudo cancelar la suscripcion'
   } finally {
     processing.value = false
   }
@@ -509,7 +509,7 @@ async function renew() {
     await subscriptionService.renew(activeSubscription.value.id)
     await load()
   } catch (err) {
-    error.value = err?.data?.message || err?.message || 'No se pudo renovar la suscripcion'
+    error.value = err?.friendlyMessage || err?.data?.detail || err?.data?.message || err?.message || 'No se pudo renovar la suscripcion'
   } finally {
     processing.value = false
   }

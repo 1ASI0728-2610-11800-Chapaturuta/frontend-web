@@ -292,7 +292,7 @@ export default {
           this.selectedCollectionId = this.collections[0].id;
         }
       } catch (err) {
-        const detail = err?.data?.message || err?.message || 'No se pudieron cargar las colecciones.';
+        const detail = err?.friendlyMessage || err?.data?.detail || err?.data?.message || err?.message || 'No se pudieron cargar las colecciones.';
         this.$toast?.add({ severity: 'error', summary: 'Error', detail, life: 4000 });
       }
     },
@@ -307,7 +307,7 @@ export default {
         this.$toast?.add({ severity: 'success', summary: 'Guardado', detail: 'Ruta agregada a la colección.', life: 3000 });
         this.showCollectionPicker = false;
       } catch (err) {
-        const detail = err?.data?.message || err?.message || 'No se pudo guardar la ruta.';
+        const detail = err?.friendlyMessage || err?.data?.detail || err?.data?.message || err?.message || 'No se pudo guardar la ruta.';
         this.$toast?.add({ severity: 'error', summary: 'Error', detail, life: 4000 });
       } finally {
         this.savingToCollection = false;

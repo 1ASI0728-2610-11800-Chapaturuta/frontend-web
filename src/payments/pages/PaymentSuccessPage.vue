@@ -81,7 +81,7 @@ onMounted(async () => {
     state.value = 'success'
   } catch (err) {
     state.value = 'error'
-    error.value = err?.data?.message || err?.message || 'Ocurrio un error al confirmar el pago.'
+    error.value = err?.friendlyMessage || err?.data?.detail || err?.data?.message || err?.message || 'Ocurrio un error al confirmar el pago.'
   }
 })
 </script>

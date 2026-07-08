@@ -201,7 +201,7 @@ const load = async () => {
       }
     }
   } catch (e) {
-    toast.add({ severity: 'error', summary: 'Error', detail: e?.data?.message || 'No se pudo cargar el historial.', life: 4000 })
+    toast.add({ severity: 'error', summary: 'Error', detail: e?.friendlyMessage || e?.data?.detail || e?.data?.message || 'No se pudo cargar el historial.', life: 4000 })
   } finally {
     isLoading.value = false
   }
@@ -318,7 +318,7 @@ const doAction = async (trip, action) => {
     toast.add({ severity: 'success', summary: 'Viaje actualizado', life: 2500 })
     await load()
   } catch (e) {
-    toast.add({ severity: 'error', summary: 'Error', detail: e?.data?.message || 'No se pudo actualizar el viaje.', life: 4000 })
+    toast.add({ severity: 'error', summary: 'Error', detail: e?.friendlyMessage || e?.data?.detail || e?.data?.message || 'No se pudo actualizar el viaje.', life: 4000 })
   } finally {
     acting.value = null
   }

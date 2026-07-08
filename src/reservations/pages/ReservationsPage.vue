@@ -88,7 +88,7 @@ async function openPay(reservation) {
     payAmount.value = Number(payment?.amount || 0)
     showPay.value = true
   } catch (err) {
-    toast.add({ severity: 'error', summary: 'Error', detail: err?.data?.message || 'No se pudo cargar el pago.', life: 4000 })
+    toast.add({ severity: 'error', summary: 'Error', detail: err?.friendlyMessage || err?.data?.detail || err?.data?.message || 'No se pudo cargar el pago.', life: 4000 })
   } finally {
     acting.value = null
   }
@@ -125,7 +125,7 @@ async function load() {
   try {
     reservations.value = await svc.getByUser(userId)
   } catch (err) {
-    error.value = err?.data?.message || err?.message || 'No se pudieron cargar las reservas'
+    error.value = err?.friendlyMessage || err?.data?.detail || err?.data?.message || err?.message || 'No se pudieron cargar las reservas'
     reservations.value = []
   } finally {
     loading.value = false
@@ -139,7 +139,7 @@ async function doCancel(reservation) {
     toast.add({ severity: 'success', summary: 'Reserva cancelada', life: 3000 })
     await load()
   } catch (err) {
-    toast.add({ severity: 'error', summary: 'Error', detail: err?.data?.message || err?.message || 'No se pudo cancelar la reserva', life: 4000 })
+    toast.add({ severity: 'error', summary: 'Error', detail: err?.friendlyMessage || err?.data?.detail || err?.data?.message || err?.message || 'No se pudo cancelar la reserva', life: 4000 })
   } finally {
     acting.value = null
   }

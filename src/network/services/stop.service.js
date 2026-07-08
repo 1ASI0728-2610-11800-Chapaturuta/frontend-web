@@ -177,7 +177,7 @@ export class StopService extends BaseService {
   _enhanceError(error) {
     if (error.response) {
       const status = error.response.status
-      const message = error.response.data?.message || error.response.data?.error || error.message
+      const message = error.friendlyMessage || error.response.data?.detail || error.response.data?.message || error.response.data?.error || error.message
       switch (status) {
         case 400: return new Error(`Datos invalidos: ${message}`)
         case 401: return new Error('No autorizado. Por favor, inicia sesion nuevamente.')

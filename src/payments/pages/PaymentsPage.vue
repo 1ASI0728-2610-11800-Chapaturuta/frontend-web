@@ -199,7 +199,7 @@ async function markFailed(payment) {
     toast.add({ severity: 'success', summary: 'Pago marcado como fallido', life: 3000 })
     await load()
   } catch (err) {
-    toast.add({ severity: 'error', summary: 'Error', detail: err?.data?.message || err?.message || 'No se pudo actualizar el pago', life: 4000 })
+    toast.add({ severity: 'error', summary: 'Error', detail: err?.friendlyMessage || err?.data?.detail || err?.data?.message || err?.message || 'No se pudo actualizar el pago', life: 4000 })
   } finally {
     actingId.value = null
   }
@@ -259,7 +259,7 @@ async function confirmRefund(payment, refund) {
     await loadRefunds(payment, true)
     await load()
   } catch (err) {
-    toast.add({ severity: 'error', summary: 'Error', detail: err?.data?.message || err?.message || 'No se pudo confirmar el reembolso', life: 4000 })
+    toast.add({ severity: 'error', summary: 'Error', detail: err?.friendlyMessage || err?.data?.detail || err?.data?.message || err?.message || 'No se pudo confirmar el reembolso', life: 4000 })
   } finally {
     actingId.value = null
   }
@@ -303,7 +303,7 @@ async function load() {
       payments.value = await service.getPaymentsByUserId(userId)
     }
   } catch (err) {
-    error.value = err?.data?.message || err?.message || 'No se pudieron cargar los pagos'
+    error.value = err?.friendlyMessage || err?.data?.detail || err?.data?.message || err?.message || 'No se pudieron cargar los pagos'
     payments.value = []
   } finally {
     loading.value = false

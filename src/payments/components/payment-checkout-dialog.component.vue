@@ -144,7 +144,9 @@ async function chooseMethod(m) {
     createdPaymentId.value = id
     step.value = stepForMethod(m)
   } catch (err) {
-    error.value = err?.data?.message || err?.message || 'No se pudo iniciar el pago'
+    // friendlyMessage (interceptor de BaseService) ya lee ProblemDetails.detail,
+    // que es donde el backend pone la razon real (ej: fuera de horario, sin asientos).
+    error.value = err?.friendlyMessage || err?.data?.detail || err?.data?.message || err?.message || 'No se pudo iniciar el pago'
     step.value = 'method'
   }
 }

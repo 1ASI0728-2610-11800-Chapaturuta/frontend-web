@@ -20,7 +20,7 @@ export default {
         this.$toast?.add({ severity: 'success', summary: 'Disponibilidad actualizada', life: 2500 });
         this.$emit('updated');
       } catch (err) {
-        const detail = err?.data?.message || err?.message || 'No se pudo actualizar la disponibilidad.';
+        const detail = err?.friendlyMessage || err?.data?.detail || err?.data?.message || err?.message || 'No se pudo actualizar la disponibilidad.';
         this.$toast?.add({ severity: 'error', summary: 'Error', detail, life: 4000 });
       } finally {
         this.toggling = false;

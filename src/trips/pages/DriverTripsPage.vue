@@ -227,7 +227,7 @@ const publish = async () => {
     publishStartTime.value = ''
     await load()
   } catch (e) {
-    toast.add({ severity: 'error', summary: 'Error', detail: e?.data?.message || e?.friendlyMessage || 'No se pudo publicar el viaje.', life: 4000 })
+    toast.add({ severity: 'error', summary: 'Error', detail: e?.friendlyMessage || e?.data?.detail || e?.data?.message || 'No se pudo publicar el viaje.', life: 4000 })
   } finally {
     publishing.value = false
   }
@@ -256,7 +256,7 @@ const loadAvailable = async () => {
   try {
     available.value = await svc.getAvailableTrips()
   } catch (e) {
-    toast.add({ severity: 'error', summary: 'Error', detail: e?.data?.message || 'No se pudieron cargar los viajes disponibles.', life: 4000 })
+    toast.add({ severity: 'error', summary: 'Error', detail: e?.friendlyMessage || e?.data?.detail || e?.data?.message || 'No se pudieron cargar los viajes disponibles.', life: 4000 })
   } finally {
     loadingAvailable.value = false
   }
@@ -269,7 +269,7 @@ const loadMine = async () => {
   try {
     mine.value = await svc.getTripHistoryByDriverId(driverId)
   } catch (e) {
-    toast.add({ severity: 'error', summary: 'Error', detail: e?.data?.message || 'No se pudieron cargar tus viajes.', life: 4000 })
+    toast.add({ severity: 'error', summary: 'Error', detail: e?.friendlyMessage || e?.data?.detail || e?.data?.message || 'No se pudieron cargar tus viajes.', life: 4000 })
   } finally {
     loadingMine.value = false
   }
@@ -289,7 +289,7 @@ const takeTrip = async (trip) => {
     toast.add({ severity: 'success', summary: 'Viaje tomado', life: 2500 })
     await load()
   } catch (e) {
-    toast.add({ severity: 'error', summary: 'Error', detail: e?.data?.message || 'No se pudo tomar el viaje.', life: 4000 })
+    toast.add({ severity: 'error', summary: 'Error', detail: e?.friendlyMessage || e?.data?.detail || e?.data?.message || 'No se pudo tomar el viaje.', life: 4000 })
   } finally {
     acting.value = null
   }
@@ -304,7 +304,7 @@ const doAction = async (trip, action) => {
     toast.add({ severity: 'success', summary: 'Viaje actualizado', life: 2500 })
     await load()
   } catch (e) {
-    toast.add({ severity: 'error', summary: 'Error', detail: e?.data?.message || 'No se pudo actualizar el viaje.', life: 4000 })
+    toast.add({ severity: 'error', summary: 'Error', detail: e?.friendlyMessage || e?.data?.detail || e?.data?.message || 'No se pudo actualizar el viaje.', life: 4000 })
   } finally {
     acting.value = null
   }

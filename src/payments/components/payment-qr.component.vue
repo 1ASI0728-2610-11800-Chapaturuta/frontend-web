@@ -103,7 +103,7 @@ async function simulate() {
     stopPolling()
     emit('paid', result)
   } catch (err) {
-    const detail = err?.data?.message || err?.message || 'No se pudo confirmar el pago'
+    const detail = err?.friendlyMessage || err?.data?.detail || err?.data?.message || err?.message || 'No se pudo confirmar el pago'
     error.value = detail
     emit('error', detail)
   } finally {
